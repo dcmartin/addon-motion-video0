@@ -1,4 +1,4 @@
-# &#127916; - `motion-video0` _add-on_
+# &#127916; - `motion` _add-on_
 
 This [Home Assistant](http://home-assistant.io) add-on utilizes the [motion project](https://motion-project.github.io/), [YOLO](https://pjreddie.com/darknet/yolo/), and other AI's to detect and classify entity(s) in images.  The _motion project_ software provides an extensive set of capabilities to capture video feeds from a variety of sources, including `RSTP`,`HTTP`, and `MJPEG` network cameras.  Locally attached USB camera on `/dev/video0` is also supported.
 
@@ -22,8 +22,6 @@ This _addon_ is built for the following architectures and available in Docker Hu
 ![](https://img.shields.io/badge/aarch64-yes-green.svg)[![](https://images.microbadger.com/badges/image/dcmartin/aarch64-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/aarch64-addon-motion-video0)[![](https://images.microbadger.com/badges/version/dcmartin/aarch64-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/aarch64-addon-motion-video0)[![](https://img.shields.io/docker/pulls/dcmartin/aarch64-addon-motion-video0.svg)](https://hub.docker.com/r/dcmartin/aarch64-addon-motion-video0)
 
 ![](https://img.shields.io/badge/armv7-yes-green.svg)[![](https://images.microbadger.com/badges/image/dcmartin/armv7-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/armv7-addon-motion-video0)[![](https://images.microbadger.com/badges/version/dcmartin/armv7-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/armv7-addon-motion-video0)[![](https://img.shields.io/docker/pulls/dcmartin/armv7-addon-motion-video0.svg)](https://hub.docker.com/r/dcmartin/armv7-addon-motion-video0)
-
-![](https://img.shields.io/badge/armhf-yes-green.svg)[![](https://images.microbadger.com/badges/image/dcmartin/armhf-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/armhf-addon-motion-video0)[![](https://images.microbadger.com/badges/version/dcmartin/armhf-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/armhf-addon-motion-video0)[![](https://img.shields.io/docker/pulls/dcmartin/armhf-addon-motion-video0.svg)](https://hub.docker.com/r/dcmartin/armhf-addon-motion-video0)
 
 ## `motion-ai`
 The [`motion-ai`](http://github.com/dcmartin/motion-ai) repository provides automated mechanisms to download, install, and configure [Home Assistant](http://home-assistant.io).   The [`webcams.json`](http://github.com/dcmartin/motion/tree/master/motion/webcams.json.tmpl) file defines cameras known to the system; file contents of `[]` indicate none and only discovered will appear.  After modifying and/or creating this file, Home Assistant should be reconfigured.  Run `make restart` in the top-level **HA** directory --  typically `/usr/share/hassio` when using the `motion-ai`installation [instructions](http://github.com/dcmartin/motion-ai/tree/master/docs/INSTALL.md).
@@ -85,7 +83,7 @@ All topics begin with the `devicedb` specified, which defaults to "motion".
 
 ## Sample output
 
-[![motion sample](samples/motion-sample.png?raw=true "SAMPLE")](samples/motion-sample.png)
+[![motion sample](http://github.com/dcmartin/addon=motion/docs/samples/motion-sample.png?raw=true "SAMPLE")](http://github.com/dcmartin/addon=motion/docs/samples/motion-sample.png?raw=true)
 
 # Additional information
 The Motion package has extensive [documentation][motiondoc] on available parameters.  Almost all parameters are avsailable.
