@@ -1,5 +1,6 @@
 {
   "name": "Motion Classic",
+  "stage": "stable",
   "version": "0.10.4",
   "slug": "motion-video0",
   "description": "Classic Motion addon with support for local and remote video devices",
@@ -10,7 +11,8 @@
   "arch": [
     "aarch64",
     "amd64",
-    "armv7"
+    "armv7",
+    "armhf"
   ],
   "ingress": true,
   "ingress_port": 7999,
@@ -91,8 +93,6 @@
     "password": "str?",
     "timezone": "str?",
     "default": {
-      "post_pictures": "list(first|last|best|most|center)",
-      "picture_output": "list(off|on|first|best)?",
       "brightness": "int?",
       "changes": "list(on|off)?",
       "contrast": "int?",
@@ -111,8 +111,10 @@
       "netcam_userpass": "str?",
       "palette": "int?",
       "password": "str?",
+      "picture_output": "list(off|on|first|best)?",
       "picture_quality": "int?",
       "post_capture": "int?",
+      "post_pictures": "list(first|last|best|most|center)",
       "pre_capture": "int?",
       "saturation": "int?",
       "stream_quality": "int?",
@@ -140,7 +142,7 @@
         "icon": "str?",
         "lightswitch": "int?",
         "mac": "str?",
-        "mjpeg_url": "str?",
+        "mjpeg_url": "url?",
         "movie_max": "int(1,60)?",
         "movie_output": "list(off|mp4|mpeg4|3gp)?",
         "movie_quality": "int(1,100)?",
@@ -159,6 +161,11 @@
         "threshold_percent": "int(0,100)?",
         "username": "str?",
         "userpass": "str?",
+        "w3w": [
+          "str?",
+          "str?",
+          "str?"
+        ],
         "width": "int?"
       }
     ],
