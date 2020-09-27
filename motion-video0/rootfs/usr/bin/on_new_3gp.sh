@@ -77,18 +77,18 @@ set pattern = "${input}-%03d.$format"
 mkdir -p "$tmpdir"
 # make all frames
 pushd "$tmpdir" >>& /dev/null
-if ($?DEBUG) echo "$0:t $$ -- Converting video $video into JPEG in directory $tmpdir using pattern $pattern at FPS $fps" >>& /tmp/motion.log
-ffmpeg -r "$fps" -i $video "$pattern" >>&! /tmp/$0:t.$$.txt
+if ($?DEBUG) echo "$0:t $$ -- Converting video /$video into JPEG in directory $tmpdir using pattern $pattern at FPS $fps" >>& /tmp/motion.log
+ffmpeg -r "$fps" -i /$video "$pattern" >>&! /tmp/$0:t.$$.txt
 # move each image in order to output
 set jpgs = ( `echo *."$format"` )
 popd >>& /dev/null
 if ($#jpgs == 0) then
-  if ($?DEBUG) echo "$0:t $$ -- Failed to convert video $video into pattern $pattern; exiting" >>& /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Failed to convert video /$video into pattern $pattern; exiting" >>& /tmp/motion.log
   cat "/tmp/$0:t.$$.txt"
   rm -fr "$tmpdir"
   exit
 else
-  if ($?DEBUG) echo "$0:t $$ -- Found $#jpgs JPEG in video $video at FPS $fps ($jpgs)" >>& /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Found $#jpgs JPEG in video /$video at FPS $fps ($jpgs)" >>& /tmp/motion.log
   rm -f "/tmp/$0:t.$$.txt"
 endif
 
@@ -138,10 +138,10 @@ rm -fr "$tmpdir"
 # document
 if ($?json) then
   # identify original video
-  identify -verbose -moments -unique "$video" | convert rose: json:- | jq -c '.[]|.image.name="'"${input}"'"|.frames=['"$frames"']' >! "$json"
+  identify -verbose -moments -unique "/$video" | convert rose: json:- | jq -c '.[]|.image.name="'"${input}"'"|.frames=['"$frames"']' >! "$json"
 endif
 
 ## ALL DONE
 done:
   if ($?DEBUG) echo "$0:t $$ -- FINISHED" >>& /tmp/motion.log
-  rm -f "${video}"
+  rm -f "/${video}"

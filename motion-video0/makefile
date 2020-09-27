@@ -140,7 +140,7 @@ service-push:
 
 service-manifest:
 	@echo "${MC}>>> MAKE --" $$(date +%T) "-- service-manifest: ${SERVICE_NAME}; architectures: ${SERVICE_ARCH_SUPPORT}""${NC}" > /dev/stderr
-	for arch in ${SERVICE_ARCH_SUPPORT}; do \
+	@for arch in ${SERVICE_ARCH_SUPPORT}; do \
 	  amendments="$${amendments:-} -a ${DOCKER_NAMESPACE}/$${arch}-${SERVICE_ID}:${SERVICE_VERSION}"; \
 	done; \
 	echo "${IC}>>> MAKE --" $$(date +%T) "-- service-manifest: ${DOCKER_NAMESPACE}/${SERVICE_ID}:${SERVICE_VERSION}; amend: $${amendments}""${NC}" > /dev/stderr; \
