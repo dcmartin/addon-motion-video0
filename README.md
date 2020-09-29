@@ -2,19 +2,21 @@
 
 This [Home Assistant](http://home-assistant.io) add-on utilizes the [motion project](https://motion-project.github.io/), [YOLO](https://pjreddie.com/darknet/yolo/), and other AI's to detect and classify entity(s) in images.  The _motion project_ software provides an extensive set of capabilities to capture video feeds from a variety of sources, including `RSTP`,`HTTP`, and `MJPEG` network cameras.  Locally attached video sources are also supported (e.g. `/dev/video0`).
 
+## Related
+
 This add-on interacts with additional components and services:
 
-1. [`motion-ai`](http://github.com/dcmartin/motion-ai/tree/master/README.md) - Automated Home Assistant configurator for use with this _addon_. Refer to the installation [instructions](http://github.com/dcmartin/motion-ai/tree/master/docs/INSTALL.md).
+1. [`motion-ai`](http://github.com/dcmartin/motion-ai/tree/master/README.md) - Automated Home Assistant configurator for use with `motion` _addon_ (see below).
 1. `MQTT`	Messaging service; use  [`mosquitto`](https://github.com/home-assistant/hassio-addons/tree/master/mosquitto) or [HiveMQ](https://github.com/hassio-addons/addon-mqtt) add-on
 1. `FTP` (_optional_) FTP daemon to receive webcam videos; use [`addon-ftp`](https://github.com/hassio-addons/addon-ftp) add-on
 
-In addition, there are three AI services which may be used to identify entities, faces, and license plates.
+In addition, there are three [Open Horizon](http://github.com/dcmartin/open-horizon) AI services specified in the in [`motion-ai`](http://github.com/dcmartin/motion-ai) repository;  they may be used to identify entities, faces, and license plates.
 
-1. [`yolo4motion`](http://github.com/dcmartin/open-horizon/tree/master/yolo4motion/README.md)  An [Open Horizon](http://github.com/dcmartin/open-horizon) service; use [`sh/yolo4motion.sh`](http://github.com/dcmartin/motion/tree/master/sh/yolo4motion.sh) in [`motion`](http://github.com/dcmartin/motion) 
-1. [`face4motion`](http://github.com/dcmartin/open-horizon/tree/master/face4motion/README.md)  An [Open Horizon](http://github.com/dcmartin/open-horizon) service; use [`sh/face4motion.sh`](http://github.com/dcmartin/motion/tree/master/sh/face4motion.sh) in [`motion`](http://github.com/dcmartin/motion) 
-1. [`alpr4motion`](http://github.com/dcmartin/open-horizon/tree/master/alpr4motion/README.md)  An [Open Horizon](http://github.com/dcmartin/open-horizon) service; use [`sh/alpr4motion.sh`](http://github.com/dcmartin/motion/tree/master/sh/alpr4motion.sh) in [`motion`](http://github.com/dcmartin/motion) 
+1. [`yolo4motion`](https://github.com/dcmartin/open-horizon/blob/master/services/yolo4motion/README.md) - using the script [`sh/yolo4motion.sh`](http://github.com/dcmartin/motion-ai/tree/master/sh/yolo4motion.sh) 
+1. [`face4motion`](https://github.com/dcmartin/open-horizon/blob/master/services/face4motion/README.md) - using the script [`sh/face4motion.sh`](http://github.com/dcmartin/motion-ai/tree/master/sh/face4motion.sh)
+1. [`alpr4motion`](https://github.com/dcmartin/open-horizon/blob/master/services/alpr4motion/README.md) - using the script [`sh/alpr4motion.sh`](http://github.com/dcmartin/motion-ai/tree/master/sh/alpr4motion.sh)
 
-### Containers
+## Containers
 This _addon_ is built for the following architectures and available in Docker Hub, e.g. [`amd64`](https://hub.docker.com/repository/docker/dcmartin/amd64-addon-motion-video0) version.
 
 ![](https://img.shields.io/badge/amd64-yes-green.svg)[![](https://images.microbadger.com/badges/image/dcmartin/amd64-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/amd64-addon-motion-video0)[![](https://images.microbadger.com/badges/version/dcmartin/amd64-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/amd64-addon-motion-video0)[![](https://img.shields.io/docker/pulls/dcmartin/amd64-addon-motion-video0.svg)](https://hub.docker.com/r/dcmartin/amd64-addon-motion-video0)
@@ -29,7 +31,7 @@ defined for successful operation:
 
 + `mqtt` - the IP address (FQDN), username, password, and port of the `MQTT` broker
 + `group` - identifier for a subset of cameras; _default_: `motion`
-+ `device` - unique identifier for each device in the _group_; **shall not** include any reserved MQTT characters (e.g. `-`, `+`, `#`, `/`)
++ `device` - unique identifier for each device in the _group_; **shall not** use reserved MQTT characters (e.g. `-,+,#,/`)
 + `client` - identifier for `device` to listen; may be `+` to indicate all devices; _default_: `+`
 + `cameras` - array of individual camera specifications (see below)
 
