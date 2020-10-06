@@ -1,7 +1,7 @@
 {
   "name": "Motion Classic",
   "stage": "stable",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "slug": "motion-video0",
   "description": "Classic Motion addon with support for local and remote video devices",
   "url": "https://github.com/dcmartin/addon-motion-video0/",
