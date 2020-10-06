@@ -74,6 +74,44 @@ motion_event_animated()
   echo "${result:-null}"
 }
 
+motion_event_animated_mask()
+{
+  motion.log.debug "${FUNCNAME[0]}" "${*}"
+
+  local result
+  local jsonfile="${1}"
+  local camera=$(jq -r '.camera' ${jsonfile})
+  local width=$(jq -r '.cameras[]|select(.name=="'${camera}'").width' $(motion.config.file))
+  local movie=$(jq '.mask' ${jsonfile})
+
+  if [ "${movie:-null}" != 'null' ]; then
+    local input=$(echo "${movie}" | jq -r '.file')
+
+    if [ -s "${input:-}" ]; then
+      local elapsed=$(jq -r '.elapsed' ${jsonfile})
+      local fps=$(echo "${movie}" | jq -r '.fps')
+
+      if [ ${elapsed:-0} -gt 0 ]; then
+        local id=$(jq -r '.id' ${jsonfile})
+        local output=$(motion_event_movie_convert "${input}" "${input%/*}/${id}.gif" ${fps:-5} ${elapsed} ${width:-640})
+
+        if [ "${output:-null}" != 'null' ]; then
+          result="${output}"
+        else
+          motion.log.error "${FUNCNAME[0]} no GIF output"
+        fi
+      else
+        motion.log.error "${FUNCNAME[0]} elapsed time invalid: ${elapsed}"
+      fi
+    else
+      motion.log.error "${FUNCNAME[0]} no MP4 input: ${input}"
+    fi
+  else
+    motion.log.warn "${FUNCNAME[0]} no movie specified; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+  fi
+  echo "${result:-null}"
+}
+
 motion_event_images_differ()
 {
   motion.log.debug "${FUNCNAME[0]}; args: ${*}"
@@ -391,6 +429,24 @@ motion_publish_animated()
   echo "${result:-false}"
 }
 
+motion_publish_animated_mask()
+{
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+
+  local result
+  local jsonfile="${1}"
+  local giffile=$(motion_event_animated_mask ${jsonfile})
+
+  if [ -s "${giffile}" ]; then
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image-animated-mask" -f "${giffile}" || result=false
+    rm -f "${giffile}"
+    result='true'
+  else
+    motion.log.error "${FUNCNAME[0]} failed to calculate animated GIF; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+  fi
+  echo "${result:-false}"
+}
+
 motion_publish_annotated()
 {
   motion.log.debug "${FUNCNAME[0]}; args: ${*}"
@@ -445,11 +501,18 @@ motion_event_process()
     result=false
   fi
 
-  # add animated GIF to event JSON
+  # add animated GIF
   if [ "${result:-}" != 'false' ] && [ $(motion_publish_animated "${jsonfile}") = 'true' ]; then
     motion.log.debug "${FUNCNAME[0]} GIF returned; from: motion_publish_animated ${jsonfile}"
   else
     motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_publish_animated ${jsonfile}"
+  fi
+
+  # add animated_mask GIF
+  if [ "${result:-}" != 'false' ] && [ $(motion_publish_animated_mask "${jsonfile}") = 'true' ]; then
+    motion.log.debug "${FUNCNAME[0]} GIF returned; from: motion_publish_animated_mask ${jsonfile}"
+  else
+    motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_publish_animated_mask ${jsonfile}"
   fi
 
   # publish event JSON 
