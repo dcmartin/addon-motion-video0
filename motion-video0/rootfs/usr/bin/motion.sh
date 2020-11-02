@@ -914,7 +914,7 @@ for (( i=0; i < ncamera; i++)); do
     VALUE=$(echo "${MOTION}" | jq -r '.username')
   fi
   motion.log.debug "Set username to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"username":'"${VALUE}"
+  CAMERAS="${CAMERAS}"',"username":"'"${VALUE}"'"'
 
   # password
   VALUE=$(jq -r '.cameras['${i}'].password' "${CONFIG_PATH}")
@@ -922,7 +922,7 @@ for (( i=0; i < ncamera; i++)); do
     VALUE=$(echo "${MOTION}" | jq -r '.password')
   fi
   motion.log.debug "Set password to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"password":'"${VALUE}"
+  CAMERAS="${CAMERAS}"',"password":"'"${VALUE}"'"'
 
   # w3w
   VALUE=$(jq '.cameras['${i}'].w3w?' "${CONFIG_PATH}")
