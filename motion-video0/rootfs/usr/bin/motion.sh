@@ -908,9 +908,50 @@ for (( i=0; i < ncamera; i++)); do
   CAMERAS="${CAMERAS}"',"name":"'"${VALUE}"'"'
   CNAME=${VALUE}
 
+  # username
+  VALUE=$(jq -r '.cameras['${i}'].username' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then
+    VALUE=$(echo "${MOTION}" | jq -r '.username')
+  fi
+  motion.log.debug "Set username to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"username":'"${VALUE}"
+
+  # password
+  VALUE=$(jq -r '.cameras['${i}'].password' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then
+    VALUE=$(echo "${MOTION}" | jq -r '.password')
+  fi
+  motion.log.debug "Set password to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"password":'"${VALUE}"
+
+  # w3w
+  VALUE=$(jq '.cameras['${i}'].w3w?' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then VALUE='["","",""]'; fi
+  CAMERAS="${CAMERAS}"',"w3w":'"${VALUE}"
+  motion.log.debug "Set w3w to ${VALUE}"
+
+  # icon top
+  VALUE=$(jq -r '.cameras['${i}'].top' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then
+    VALUE=${ICON_TOP:-10}
+    ICON_TOP=$((VALUE+5))
+    if [ ${ICON_TOP} -ge 95 ]; then
+      ICON_TOP=10;
+      ICON_LEFT=${ICON_LEFT:-10} && ICON_LEFT=$((ICON_LEFT+5))
+    fi
+  fi
+  motion.log.debug "Set top to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"top":'"${VALUE}"
+
+  # icon left
+  VALUE=$(jq -r '.cameras['${i}'].left' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then VALUE=${ICON_LEFT:-10}; fi
+  motion.log.debug "Set left to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"left":'"${VALUE}"
+
   # process models string to array of strings
   VALUE=$(jq -r '.cameras['${i}'].models' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then
     W=$(echo "${WATSON:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
     # motion.log.debug "WATSON: ${WATSON} ${W}"
     D=$(echo "${DIGITS:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)

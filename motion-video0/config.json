@@ -1,7 +1,7 @@
 {
   "name": "Motion Classic",
+  "version": "0.10.6",
   "stage": "stable",
-  "version": "0.10.5",
   "slug": "motion-video0",
   "description": "Classic Motion addon with support for local and remote video devices",
   "url": "https://github.com/dcmartin/addon-motion-video0/",
@@ -11,9 +11,7 @@
   "arch": [
     "aarch64",
     "amd64",
-    "armv7",
-    "armhf",
-    "i386"
+    "armv7"
   ],
   "ingress": true,
   "ingress_port": 7999,
@@ -70,13 +68,22 @@
       "password": "!secret mqtt-password"
     },
     "group": "motion",
-    "device": "hostname",
-    "client": "hostname",
+    "device": "raspberrypi",
+    "client": "raspberrypi",
     "timezone": "America/Los_Angeles",
     "cameras": [
       {
-        "name": "ps3eye",
-        "type": "local"
+        "name": "local",
+        "type": "local",
+        "icon": "cctv",
+        "width": 640,
+        "height": 480,
+        "framerate": 10,
+        "minimum_motion_frames": 30,
+        "event_gap": 60,
+        "top": 50,
+        "left": 50,
+        "w3w": []
       }
     ]
   },
@@ -94,6 +101,8 @@
     "password": "str?",
     "timezone": "str?",
     "default": {
+      "post_pictures": "list(first|last|best|most|center)",
+      "picture_output": "list(off|on|first|best)?",
       "brightness": "int?",
       "changes": "list(on|off)?",
       "contrast": "int?",
@@ -112,10 +121,8 @@
       "netcam_userpass": "str?",
       "palette": "int?",
       "password": "str?",
-      "picture_output": "list(off|on|first|best)?",
       "picture_quality": "int?",
       "post_capture": "int?",
-      "post_pictures": "list(first|last|best|most|center)",
       "pre_capture": "int?",
       "saturation": "int?",
       "stream_quality": "int?",
@@ -162,12 +169,14 @@
         "threshold_percent": "int(0,100)?",
         "username": "str?",
         "userpass": "str?",
+        "width": "int?",
         "w3w": [
           "str?",
           "str?",
           "str?"
         ],
-        "width": "int?"
+        "top": "int?",
+        "left": "int?"
       }
     ],
     "mqtt": {

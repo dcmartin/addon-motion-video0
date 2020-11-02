@@ -573,7 +573,7 @@ motion_event_end()
           MOTION_FRAME_SELECT='key' \
           && \
           /usr/bin/on_event_end.tcsh ${*}
-        result='legacy'
+        result='{"legacy":$?}'
       else
         motion.log.error "${FUNCNAME[0]} FAILURE: no images; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
       fi
