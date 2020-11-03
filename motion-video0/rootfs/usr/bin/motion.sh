@@ -908,21 +908,23 @@ for (( i=0; i < ncamera; i++)); do
   CAMERAS="${CAMERAS}"',"name":"'"${VALUE}"'"'
   CNAME=${VALUE}
 
-  # username
-  VALUE=$(jq -r '.cameras['${i}'].username' "${CONFIG_PATH}")
-  if [ "${VALUE:-null}" = 'null' ]; then
-    VALUE=$(echo "${MOTION}" | jq -r '.username')
-  fi
-  motion.log.debug "Set username to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"username":"'"${VALUE}"'"'
+  # icon
+  VALUE=$(jq -r '.cameras['${i}'].icon' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then VALUE='cctv'; fi
+  motion.log.debug "Set icon to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"icon":"'"${VALUE}"'"'
 
-  # password
-  VALUE=$(jq -r '.cameras['${i}'].password' "${CONFIG_PATH}")
+  # username
+  VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
   if [ "${VALUE:-null}" = 'null' ]; then
-    VALUE=$(echo "${MOTION}" | jq -r '.password')
+    VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass')
   fi
-  motion.log.debug "Set password to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"password":"'"${VALUE}"'"'
+  USERNAME=${VALUE%%:*}
+  PASSWORD=${VALUE##*:}
+  motion.log.debug "Set username to ${USERNAME}"
+  CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
+  motion.log.debug "Set username to ${PASSWORD}"
+  CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
 
   # w3w
   VALUE=$(jq '.cameras['${i}'].w3w?' "${CONFIG_PATH}")
@@ -1029,20 +1031,8 @@ for (( i=0; i < ncamera; i++)); do
         VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
         if [ "${VALUE}" != "null" ] || [ ! -z "${VALUE}" ]; then 
           CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
-          UP=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
-          if [ "${UP}" != "null" ] && [ ! -z "${UP}" ]; then 
-            CAMERAS="${CAMERAS}"',"netcam_userpass":"'"${UP}"'"'
-            VALUE="${VALUE%%//*}//${UP}@${VALUE##*://}"
-          fi
-        fi
-        motion.log.debug "Set mjpeg_url to ${VALUE}"
-        CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
-
-        # icon
-        VALUE=$(jq -r '.cameras['${i}'].icon' "${CONFIG_PATH}")
-        if [ "${VALUE}" != "null" ] || [ ! -z "${VALUE}" ]; then 
-          motion.log.debug "Set icon to ${VALUE}"
-          CAMERAS="${CAMERAS}"',"icon":"'"${VALUE}"'"'
+          motion.log.debug "Set mjpeg_url to ${VALUE}"
+          CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
         fi
 
         # FTP share_dir
