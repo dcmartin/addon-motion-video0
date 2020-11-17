@@ -17,12 +17,6 @@ motion_event_movie_convert()
   local width=${5:-640}
   local ffmpeg=$(mktemp)
 
-  if [ ${seconds} -gt 15 ]; then 
-    motion.log.warn "${FUNCNAME[0]} EXCEEDED; elapsed ${seconds}; fps: ${fps}; width: ${width}"
-    seconds=15
-  else
-    motion.log.debug "${FUNCNAME[0]} elapsed ${seconds}; fps: ${fps}; width: ${width}"
-  fi
   if [ ${seconds} -gt 0 ]; then
     ffmpeg -t ${seconds} -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> ${ffmpeg}
   else

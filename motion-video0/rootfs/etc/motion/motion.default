@@ -1,6 +1,3 @@
-###
-### ONLY ATTRIBUTES LISTED MAY BE CHANGED
-###
 auto_brightness off
 daemon on
 despeckle_filter EedDl
@@ -8,24 +5,24 @@ emulate_motion off
 event_gap 10
 framerate 1
 height 480
+lightswitch_frames: 5
+lightswitch_percent 50
 locate_motion_mode off
 locate_motion_style box
 log_file /tmp/motion.log
-# The various levels are [1..9] (EMR, ALR, CRT, ERR, WRN, NTC, INF, DBG, ALL).
 log_level 6
-# The choices for this option are: COR, STR, ENC, NET, DBL, EVT, TRK, VID, ALL 
 log_type all
 minimum_frame_time 0
 minimum_motion_frames 1
 movie_codec mp4
 movie_filename %Y%m%d%H%M%S-%v
-movie_max_time 60
+movie_max_time 15
 movie_output off
 movie_output_motion off
 movie_quality 100
+netcam_keepalive on
 netcam_tolerant_check on
 netcam_use_tcp on
-netcam_keepalive on
 noise_level 32
 noise_tune on
 on_camera_found /usr/bin/on_camera_found.sh %$ %Y %m %d %H %M %S
@@ -33,8 +30,8 @@ on_camera_lost /usr/bin/on_camera_lost.sh %$ %Y %m %d %H %M %S
 on_event_end /usr/bin/on_event_end.sh %$ %v %Y %m %d %H %M %S
 on_event_start /usr/bin/on_event_start.sh %$ %v %Y %m %d %H %M %S
 on_motion_detected /usr/bin/on_motion_detected.sh %$ %v %Y %m %d %H %M %S
-on_picture_save /usr/bin/on_picture_save.sh %$ %v %f %n %K %L %i %J %D %N
 on_movie_end /usr/bin/on_movie_end.sh %$ %v %f %n %{fps} %Y %m %d %H %M %S
+on_picture_save /usr/bin/on_picture_save.sh %$ %v %f %n %K %L %i %J %D %N
 picture_filename %Y%m%d%H%M%S-%v-%q
 picture_output best
 picture_output_motion off
@@ -52,7 +49,6 @@ stream_auth_method 1
 stream_limit 0
 stream_localhost off
 stream_maxrate 5
-stream_motion on
 stream_motion off
 stream_port 8090
 stream_quality 100
@@ -63,6 +59,7 @@ text_left %$\n%Y-%m-%d\n%T %q %{fps}
 text_right 
 text_scale 2
 threshold 1500
+threshold_maximum 100000
 threshold_tune off
 timelapse_filename %Y%m%d-timelapse
 timelapse_interval 0

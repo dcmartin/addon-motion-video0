@@ -287,9 +287,12 @@ start_motion()
 ### START
 ###
 
-## build internal configuration
+## get IP address
 ipaddr=$(ip addr | egrep -A4 UP | egrep 'inet ' | egrep -v 'scope host lo' | egrep -v 'scope global docker' | awk '{ print $2 }')
-JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'${ipaddr%%/*}'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
+ipaddr=${ipaddr%%/*}
+
+## build internal configuration
+JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'${ipaddr}'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
 
 # device name
 VALUE=$(jq -r ".device" "${CONFIG_PATH}")
@@ -818,12 +821,33 @@ motion.log.debug "Set threshold to ${VALUE}"
 sed -i "s/.*threshold.*/threshold ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold":'"${VALUE}"
 
-# set lightswitch
-VALUE=$(jq -r ".default.lightswitch" "${CONFIG_PATH}")
+# set threshold_maximum
+VALUE=$(jq -r ".default.threshold_maximum" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+motion.log.debug "Set threshold_maximum to ${VALUE}"
+sed -i "s/.*threshold_maximum.*/threshold_maximum ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"threshold_maximum":'"${VALUE}"
+
+# set lightswitch percent
+VALUE=$(jq -r ".default.lightswitch_percent" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 motion.log.debug "Set lightswitch to ${VALUE}"
-sed -i "s/.*lightswitch.*/lightswitch ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*lightswitch_percent.*/lightswitch_percent ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"lightswitch":'"${VALUE}"
+
+# set lightswitch frames
+VALUE=$(jq -r ".default.lightswitch_frames" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+motion.log.debug "Set lightswitch to ${VALUE}"
+sed -i "s/.*lightswitch_frames.*/lightswitch_frames ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"lightswitch_frames":'"${VALUE}"
+
+# set movie_max
+VALUE=$(jq -r ".default.movie_max" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+motion.log.debug "Set movie_max to ${VALUE}"
+sed -i "s/.*movie_max.*/movie_max ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"movie_max":'"${VALUE}"
 
 # set interval for events
 VALUE=$(jq -r '.default.interval' "${CONFIG_PATH}")
@@ -1095,7 +1119,7 @@ for (( i=0; i < ncamera; i++)); do
   CAMERAS="${CAMERAS}"',"conf":"'"${CAMERA_CONF}"'"'
 
   # calculate mjpeg_url for camera
-  VALUE="http://127.0.0.1:${MOTION_STREAM_PORT}/${CNUM}"
+  VALUE="http://${ipaddr}:${MOTION_STREAM_PORT}/${CNUM}"
   motion.log.debug "Set mjpeg_url to ${VALUE}"
   CAMERAS="${CAMERAS}"',"mjpeg_url":"'${VALUE}'"'
 
