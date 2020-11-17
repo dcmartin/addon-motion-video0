@@ -34,7 +34,6 @@ RUN \
         libmicrohttpd=0.9.70-r0 \
         libwebp=1.1.0-r0 \
         mosquitto-clients=1.6.9-r0 \
-        nginx=1.18.0-r0 \
         python2=2.7.18-r0 \
         v4l-utils=1.20.0-r0 \
     \
@@ -52,7 +51,6 @@ RUN \
             --without-sqlite3 \
             --prefix=/usr \
             --sysconfdir=/etc \
-            --without-optimizecpu \
     && make install \
     && make distclean
 
@@ -84,10 +82,6 @@ RUN apk add --no-cache \
 
 RUN apk add --no-cache \
   tcsh@edge
-
-#RUN apk add --no-cache \
-#  ffmpeg \
-#  motion@edge
 
 ## LIVE555
 RUN \
@@ -137,16 +131,6 @@ ENV MOTION_CONF /etc/motion/motion.conf
 COPY rootfs /
 
 ## APACHE
-
-#ARG APACHE_CONF=/etc/apache2/httpd.conf
-#ARG APACHE_HTDOCS=/var/www/localhost/htdocs
-#ARG APACHE_CGIBIN=/var/www/localhost/cgi-bin
-#ARG APACHE_HOST=localhost
-#ARG APACHE_PORT=8888
-#ARG APACHE_ADMIN=root@localhost.local
-#ARG APACHE_PID_FILE=/var/run/apache2/apache2.pid
-#ARG APACHE_LOG_DIR=/var/www/logs
-#ARG APACHE_LOG_LEVEL=info
 
 ARG MOTION_APACHE_CONF=/etc/apache2/httpd.conf
 ARG MOTION_APACHE_HTDOCS=/var/www/localhost/htdocs

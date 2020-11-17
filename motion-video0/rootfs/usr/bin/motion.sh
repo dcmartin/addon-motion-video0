@@ -249,8 +249,8 @@ process_config_system()
   motion.log.debug "${FUNCNAME[0]}" "${*}"
 
   local timestamp=$(date -u +%FT%TZ)
-  local hostname="$(hostname)"
-  local json='{"ipaddr":"'$(hostname -i)'","hostname":"'${hostname}'","arch":"'$(arch)'","date":'$(date -u +%s)',"timestamp":"'${timestamp}'"}'
+  local ipaddr=$(ip addr | egrep -A4 UP | egrep 'inet ' | egrep -v 'scope host lo' | egrep -v 'scope global docker' | awk '{ print $2 }')
+  local json='{"ipaddr":"'${ipaddr%%/*}'","hostname":"'$(hostname)'","arch":"'$(arch)'","date":'$(date -u +%s)',"timestamp":"'${timestamp}'"}'
 
   echo "${json:-null}"
 }
@@ -288,7 +288,8 @@ start_motion()
 ###
 
 ## build internal configuration
-JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
+ipaddr=$(ip addr | egrep -A4 UP | egrep 'inet ' | egrep -v 'scope host lo' | egrep -v 'scope global docker' | awk '{ print $2 }')
+JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'${ipaddr%%/*}'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
 
 # device name
 VALUE=$(jq -r ".device" "${CONFIG_PATH}")
