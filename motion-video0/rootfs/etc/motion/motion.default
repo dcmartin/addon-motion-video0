@@ -48,10 +48,11 @@ snapshot_interval 0
 stream_auth_method 1
 stream_limit 0
 stream_localhost off
-stream_maxrate 5
+stream_maxrate 10
 stream_motion off
 stream_port 8090
-stream_quality 100
+stream_preview_method 0
+stream_quality 50
 target_dir /var/lib/motion
 text_changes on
 text_event %Y%m%d%H%M%S
@@ -65,7 +66,7 @@ timelapse_filename %Y%m%d-timelapse
 timelapse_interval 0
 timelapse_mode daily
 vid_control_params hue=0 saturation=0 brightness=0 contrast=0
-webcontrol_interface on
+webcontrol_interface 0
 webcontrol_localhost off
 webcontrol_port 8080
 width 640
