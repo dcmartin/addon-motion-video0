@@ -671,8 +671,10 @@ motion.log.debug "Set picture_quality to ${VALUE}"
 # set framerate
 VALUE=$(jq -r ".default.framerate" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
-sed -i "s/.*framerate\s[0-9]\+/framerate ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*framerate .*/framerate ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*stream_maxrate .*/stream_maxrate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"framerate":'"${VALUE}"
+MOTION="${MOTION}"',"stream_maxrate":'"${VALUE}"
 motion.log.debug "Set framerate to ${VALUE}"
 
 # set text_changes
@@ -1018,6 +1020,7 @@ for (( i=0; i < ncamera; i++)); do
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=$(echo "${MOTION}" | jq -r '.framerate'); fi
   fi
   motion.log.debug "Set framerate to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"stream_maxrate":'"${VALUE}"
   CAMERAS="${CAMERAS}"',"framerate":'"${VALUE}"
   FRAMERATE=${VALUE}
 
@@ -1134,6 +1137,7 @@ for (( i=0; i < ncamera; i++)); do
   echo "width ${WIDTH}" >> "${CAMERA_CONF}"
   echo "height ${HEIGHT}" >> "${CAMERA_CONF}"
   echo "framerate ${FRAMERATE}" >> "${CAMERA_CONF}"
+  echo "steam_maxrate ${FRAMERATE}" >> "${CAMERA_CONF}"
   echo "event_gap ${EVENT_GAP}" >> "${CAMERA_CONF}"
 
   # rotate 
