@@ -844,12 +844,12 @@ motion.log.debug "Set lightswitch to ${VALUE}"
 sed -i "s/.*lightswitch_frames.*/lightswitch_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"lightswitch_frames":'"${VALUE}"
 
-# set movie_max
-VALUE=$(jq -r ".default.movie_max" "${CONFIG_PATH}")
+# set movie_max_time
+VALUE=$(jq -r ".default.movie_max_time" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.debug "Set movie_max to ${VALUE}"
-sed -i "s/.*movie_max.*/movie_max ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"movie_max":'"${VALUE}"
+motion.log.debug "Set movie_max_time to ${VALUE}"
+sed -i "s/.*movie_max_time.*/movie_max_time ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"movie_max_time":'"${VALUE}"
 
 # set interval for events
 VALUE=$(jq -r '.default.interval' "${CONFIG_PATH}")
@@ -1013,6 +1013,13 @@ for (( i=0; i < ncamera; i++)); do
   motion.log.debug "Set height to ${VALUE}"
   HEIGHT=${VALUE}
 
+  # movie_max_time 
+  VALUE=$(jq -r '.cameras['${i}'].movie_max_time' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.movie_max_time'); fi
+  CAMERAS="${CAMERAS}"',"movie_max_time":'"${VALUE}"
+  motion.log.debug "Set movie_max_time to ${VALUE}"
+  MOVIE_MAX_TIME=${VALUE}
+
   # process camera framerate; set on wcv80n web GUI; default 6
   VALUE=$(jq -r '.cameras['${i}'].framerate' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
@@ -1136,8 +1143,9 @@ for (( i=0; i < ncamera; i++)); do
   echo "target_dir ${TARGET_DIR}" >> "${CAMERA_CONF}"
   echo "width ${WIDTH}" >> "${CAMERA_CONF}"
   echo "height ${HEIGHT}" >> "${CAMERA_CONF}"
+  echo "movie_max_time ${MOVIE_MAX_TIME}" >> "${CAMERA_CONF}"
   echo "framerate ${FRAMERATE}" >> "${CAMERA_CONF}"
-  echo "steam_maxrate ${FRAMERATE}" >> "${CAMERA_CONF}"
+  echo "stream_maxrate ${FRAMERATE}" >> "${CAMERA_CONF}"
   echo "event_gap ${EVENT_GAP}" >> "${CAMERA_CONF}"
 
   # rotate 
