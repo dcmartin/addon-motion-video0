@@ -2,8 +2,8 @@ auto_brightness off
 daemon on
 despeckle_filter EedDl
 emulate_motion off
-event_gap 10
-framerate 1
+event_gap 5
+framerate 5
 height 480
 lightswitch_frames: 5
 lightswitch_percent 50
@@ -46,6 +46,7 @@ smart_mask_speed 0
 snapshot_filename %Y%m%d%H%M%S-%v-snapshot
 snapshot_interval 0
 stream_auth_method 1
+stream_authentication username:password
 stream_limit 0
 stream_localhost off
 stream_maxrate 5

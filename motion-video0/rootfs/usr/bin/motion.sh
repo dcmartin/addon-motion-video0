@@ -149,7 +149,7 @@ process_config_camera_v4l2()
   value=$(echo "${config:-null}" | jq -r ".v4l2_pallette")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=15; fi
   json=$(echo "${json}" | jq '.v4l2_palette='${value})
-  sed -i "s/.*v4l2_palette\s[0-9]\+/v4l2_palette ${value}/" "${MOTION_CONF}"
+  sed -i "s/^v4l2_palette\s[0-9]\+/v4l2_palette ${value}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"v4l2_palette":'"${value}"
   motion.log.debug "Set v4l2_palette to ${value}"
   
@@ -426,7 +426,7 @@ MOTION='{'
 # set log_type (FIRST ENTRY)
 VALUE=$(jq -r ".log_motion_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="ALL"; fi
-sed -i "s|.*log_type.*|log_type ${VALUE}|" "${MOTION_CONF}"
+sed -i "s|^log_type .*|log_type ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"'"log_type":"'"${VALUE}"'"'
 motion.log.debug "Set motion.log_type to ${VALUE}"
 
@@ -461,14 +461,14 @@ case ${VALUE} in
     VALUE=6
     ;;
 esac
-sed -i "s/.*log_level.*/log_level ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^log_level .*/log_level ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_level":'"${VALUE}"
 motion.log.debug "Set motion.log_level to ${VALUE}"
 
 # set log_file
 VALUE=$(jq -r ".log_file" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/tmp/motion.log"; fi
-sed -i "s|.*log_file.*|log_file ${VALUE}|" "${MOTION_CONF}"
+sed -i "s|^log_file .*|log_file ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_file":"'"${VALUE}"'"'
 motion.log.debug "Set log_file to ${VALUE}"
 
@@ -483,28 +483,28 @@ MOTION_SHARE_DIR="${VALUE}"
 VALUE=$(jq -r ".default.target_dir" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_APACHE_HTDOCS}/cameras"; fi
 motion.log.debug "Set target_dir to ${VALUE}"
-sed -i "s|.*target_dir.*|target_dir ${VALUE}|" "${MOTION_CONF}"
+sed -i "s|^target_dir .*|target_dir ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"',"target_dir":"'"${VALUE}"'"'
 MOTION_TARGET_DIR="${VALUE}"
 
 # set auto_brightness
 VALUE=$(jq -r ".default.auto_brightness" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
-sed -i "s/.*auto_brightness.*/auto_brightness ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^auto_brightness .*/auto_brightness ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"auto_brightness":"'"${VALUE}"'"'
 motion.log.debug "Set auto_brightness to ${VALUE}"
 
 # set locate_motion_mode
 VALUE=$(jq -r ".default.locate_motion_mode" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="off"; fi
-sed -i "s/.*locate_motion_mode.*/locate_motion_mode ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^locate_motion_mode .*/locate_motion_mode ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_mode":"'"${VALUE}"'"'
 motion.log.debug "Set locate_motion_mode to ${VALUE}"
 
 # set locate_motion_style (box, redbox, cross, redcross)
 VALUE=$(jq -r ".default.locate_motion_style" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="box"; fi
-sed -i "s/.*locate_motion_style.*/locate_motion_style ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^locate_motion_style .*/locate_motion_style ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_style":"'"${VALUE}"'"'
 motion.log.debug "Set locate_motion_style to ${VALUE}"
 
@@ -599,21 +599,21 @@ fi
 # set picture_type (jpeg, ppm)
 VALUE=$(jq -r ".default.picture_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="jpeg"; fi
-sed -i "s/.*picture_type .*/picture_type ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^picture_type .*/picture_type ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_type":"'"${VALUE}"'"'
 motion.log.debug "Set picture_type to ${VALUE}"
 
 # set netcam_keepalive (off,force,on)
 VALUE=$(jq -r ".default.netcam_keepalive" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
-sed -i "s/.*netcam_keepalive .*/netcam_keepalive ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^netcam_keepalive .*/netcam_keepalive ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"netcam_keepalive":"'"${VALUE}"'"'
 motion.log.debug "Set netcam_keepalive to ${VALUE}"
 
 # set netcam_userpass 
 VALUE=$(jq -r ".default.netcam_userpass" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-sed -i "s/.*netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"netcam_userpass":"'"${VALUE}"'"'
 motion.log.debug "Set netcam_userpass to ${VALUE}"
 
@@ -622,7 +622,7 @@ motion.log.debug "Set netcam_userpass to ${VALUE}"
 # set v4l2_palette
 VALUE=$(jq -r ".default.palette" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  sed -i "s/.*v4l2_palette\s[0-9]\+/v4l2_palette ${VALUE}/" "${MOTION_CONF}"
+  sed -i "s/^v4l2_palette .*/v4l2_palette ${VALUE}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"palette":'"${VALUE}"
   motion.log.debug "Set palette to ${VALUE}"
 fi
@@ -630,21 +630,21 @@ fi
 # set pre_capture
 VALUE=$(jq -r ".default.pre_capture" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-sed -i "s/.*pre_capture\s[0-9]\+/pre_capture ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^pre_capture .*/pre_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"pre_capture":'"${VALUE}"
 motion.log.debug "Set pre_capture to ${VALUE}"
 
 # set post_capture
 VALUE=$(jq -r ".default.post_capture" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-sed -i "s/.*post_capture\s[0-9]\+/post_capture ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^post_capture .*/post_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"post_capture":'"${VALUE}"
 motion.log.debug "Set post_capture to ${VALUE}"
 
 # set event_gap
 VALUE=$(jq -r ".default.event_gap" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
-sed -i "s/.*event_gap\s[0-9]\+/event_gap ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^event_gap .*/event_gap ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"event_gap":'"${VALUE}"
 motion.log.debug "Set event_gap to ${VALUE}"
 
@@ -657,22 +657,22 @@ motion.log.debug "Set fov to ${VALUE}"
 # set minimum_motion_frames
 VALUE=$(jq -r ".default.minimum_motion_frames" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
-sed -i "s/.*minimum_motion_frames\s[0-9]\+/minimum_motion_frames ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^minimum_motion_frames .*/minimum_motion_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
 motion.log.debug "Set minimum_motion_frames to ${VALUE}"
 
 # set quality
 VALUE=$(jq -r ".default.picture_quality" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
-sed -i "s/.*picture_quality\s[0-9]\+/picture_quality ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^picture_quality .*/picture_quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_quality":'"${VALUE}"
 motion.log.debug "Set picture_quality to ${VALUE}"
 
 # set framerate
 VALUE=$(jq -r ".default.framerate" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
-sed -i "s/.*framerate .*/framerate ${VALUE}/" "${MOTION_CONF}"
-sed -i "s/.*stream_maxrate .*/stream_maxrate ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^framerate .*/framerate ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^stream_maxrate .*/stream_maxrate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"framerate":'"${VALUE}"
 MOTION="${MOTION}"',"stream_maxrate":'"${VALUE}"
 motion.log.debug "Set framerate to ${VALUE}"
@@ -680,21 +680,21 @@ motion.log.debug "Set framerate to ${VALUE}"
 # set text_changes
 VALUE=$(jq -r ".default.changes" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE='off'; fi
-sed -i "s/.*text_changes\s[0-9]\+/text_changes ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^text_changes .*/text_changes ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"changes":"'"${VALUE}"'"'
 motion.log.debug "Set text_changes to ${VALUE}"
 
 # set text_scale
 VALUE=$(jq -r ".default.text_scale" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
-sed -i "s/.*text_scale\s[0-9]\+/text_scale ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^text_scale .*/text_scale ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"text_scale":'"${VALUE}"
 motion.log.debug "Set text_scale to ${VALUE}"
 
 # set despeckle_filter
 VALUE=$(jq -r ".default.despeckle" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE='EedDl'; fi
-sed -i "s/.*despeckle_filter\s[0-9]\+/despeckle_filter ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^despeckle_filter .*/despeckle_filter ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"despeckle_filter":"'"${VALUE}"'"'
 motion.log.debug "Set despeckle_filter to ${VALUE}"
 
@@ -756,34 +756,34 @@ motion.log.debug "Set hue to ${VALUE}"
 VALUE=$(jq -r ".default.rotate" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 motion.log.debug "Set rotate to ${VALUE}"
-sed -i "s/.*rotate\s[0-9]\+/rotate ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^rotate .*/rotate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"rotate":'"${VALUE}"
 
 # set webcontrol_port
 VALUE=$(jq -r ".default.webcontrol_port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
 motion.log.debug "Set webcontrol_port to ${VALUE}"
-sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^webcontrol_port .*/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"webcontrol_port":'"${VALUE}"
 
 # set stream_port
 VALUE=$(jq -r ".default.stream_port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; fi
 motion.log.debug "Set stream_port to ${VALUE}"
-sed -i "s/.*stream_port\s[0-9]\+/stream_port ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^stream_port .*/stream_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_port":'"${VALUE}"
 
 # set stream_quality
 VALUE=$(jq -r ".default.stream_quality" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
 motion.log.debug "Set stream_quality to ${VALUE}"
-sed -i "s/.*stream_quality\s[0-9]\+/stream_quality ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^stream_quality .*/stream_quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_quality":'"${VALUE}"
 
 # set width
 VALUE=$(jq -r ".default.width" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=640; fi
-sed -i "s/.*width\s[0-9]\+/width ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^width .*/width ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"width":'"${VALUE}"
 WIDTH=${VALUE}
 motion.log.debug "Set width to ${VALUE}"
@@ -791,17 +791,10 @@ motion.log.debug "Set width to ${VALUE}"
 # set height
 VALUE=$(jq -r ".default.height" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=480; fi
-sed -i "s/.*height\s[0-9]\+/height ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^height .*/height ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"height":'"${VALUE}"
 HEIGHT=${VALUE}
 motion.log.debug "Set height to ${VALUE}"
-
-# set threshold_tune (on/off)
-VALUE=$(jq -r ".default.threshold_tune" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
-sed -i "s/.*threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
-motion.log.debug "Set threshold_tune to ${VALUE}"
 
 # set threshold_percent
 VALUE=$(jq -r ".default.threshold_percent" "${CONFIG_PATH}")
@@ -820,36 +813,48 @@ else
 fi
 # set threshold
 motion.log.debug "Set threshold to ${VALUE}"
-sed -i "s/.*threshold.*/threshold ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^threshold .*/threshold ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold":'"${VALUE}"
 
 # set threshold_maximum
 VALUE=$(jq -r ".default.threshold_maximum" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.debug "Set threshold_maximum to ${VALUE}"
-sed -i "s/.*threshold_maximum.*/threshold_maximum ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"threshold_maximum":'"${VALUE}"
+if [ "${VALUE:-}" != "null" ]; then
+  motion.log.debug "Set threshold_maximum to ${VALUE}"
+  sed -i "s/^threshold_maximum .*/threshold_maximum ${VALUE}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"threshold_maximum":'"${VALUE}"
+fi
+
+# set threshold_tune (on/off)
+VALUE=$(jq -r ".default.threshold_tune" "${CONFIG_PATH}")
+if [ "${VALUE:-null}" != "null" ]; then
+  sed -i "s/^threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
+  motion.log.debug "Set threshold_tune to ${VALUE}"
+fi
 
 # set lightswitch percent
 VALUE=$(jq -r ".default.lightswitch_percent" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.debug "Set lightswitch to ${VALUE}"
-sed -i "s/.*lightswitch_percent.*/lightswitch_percent ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"lightswitch":'"${VALUE}"
+if [ "${VALUE:-null}" != "null" ]; then
+  motion.log.debug "Set lightswitch percent to ${VALUE}"
+  sed -i "s/^lightswitch_percent .*/lightswitch_percent ${VALUE}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"lightswitch_percent":'"${VALUE}"
+fi
 
 # set lightswitch frames
 VALUE=$(jq -r ".default.lightswitch_frames" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.debug "Set lightswitch to ${VALUE}"
-sed -i "s/.*lightswitch_frames.*/lightswitch_frames ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"lightswitch_frames":'"${VALUE}"
+if [ "${VALUE:-null}" != "null" ]; then
+  motion.log.debug "Set lightswitch frames to ${VALUE}"
+  sed -i "s/^lightswitch_frames .*/lightswitch_frames ${VALUE}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"lightswitch_frames":'"${VALUE}"
+fi
 
 # set movie_max_time
 VALUE=$(jq -r ".default.movie_max_time" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.debug "Set movie_max_time to ${VALUE}"
-sed -i "s/.*movie_max_time.*/movie_max_time ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"movie_max_time":'"${VALUE}"
+if [ "${VALUE:-}" != "null" ]; then
+  motion.log.debug "Set movie_max_time to ${VALUE}"
+  sed -i "s/^movie_max_time .*/movie_max_time ${VALUE}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"movie_max_time":'"${VALUE}"
+fi
 
 # set interval for events
 VALUE=$(jq -r '.default.interval' "${CONFIG_PATH}")
@@ -872,17 +877,17 @@ USERNAME=$(jq -r ".default.username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".default.password" "${CONFIG_PATH}")
 if [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
   motion.log.debug "Set authentication to Basic for both stream and webcontrol"
-  sed -i "s/.*stream_auth_method.*/stream_auth_method 1/" "${MOTION_CONF}"
-  sed -i "s/.*stream_authentication.*/stream_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
-  sed -i "s/.*webcontrol_authentication.*/webcontrol_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
+  sed -i "s/^stream_auth_method .*/stream_auth_method 1/" "${MOTION_CONF}"
+  sed -i "s/^stream_authentication .*/stream_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
+  sed -i "s/^webcontrol_authentication .*/webcontrol_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
   motion.log.debug "Enable access for any host"
-  sed -i "s/.*stream_localhost .*/stream_localhost off/" "${MOTION_CONF}"
-  sed -i "s/.*webcontrol_localhost .*/webcontrol_localhost off/" "${MOTION_CONF}"
+  sed -i "s/^stream_localhost .*/stream_localhost off/" "${MOTION_CONF}"
+  sed -i "s/^webcontrol_localhost .*/webcontrol_localhost off/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"stream_auth_method":"Basic"'
 else
   motion.log.debug "WARNING: no username and password; stream and webcontrol limited to localhost only"
-  sed -i "s/.*stream_localhost .*/stream_localhost on/" "${MOTION_CONF}"
-  sed -i "s/.*webcontrol_localhost .*/webcontrol_localhost on/" "${MOTION_CONF}"
+  sed -i "s/^stream_localhost .*/stream_localhost on/" "${MOTION_CONF}"
+  sed -i "s/^webcontrol_localhost .*/webcontrol_localhost on/" "${MOTION_CONF}"
 fi
 
 # add username and password to configuration
@@ -986,7 +991,7 @@ for (( i=0; i < ncamera; i++)); do
     D=$(echo "${DIGITS:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)
     # motion.log.debug "DIGITS: ${DIGITS} ${D}"
     VALUE=$(echo ${W} ${D})
-    VALUE=$(echo "${VALUE}" | sed "s/ /,/g")
+    VALUE=$(echo "${VALUE}" | sed 's/ /,/g')
   else
     VALUE=$(echo "${VALUE}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
   fi
@@ -1109,7 +1114,7 @@ for (( i=0; i < ncamera; i++)); do
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
       VALUE=$((VALUE + MOTION_COUNT))
       motion.log.debug "Set webcontrol_port to ${VALUE}"
-      sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
+      sed -i "s/^webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
     else
       CNUM=$((CNUM+1))
     fi
