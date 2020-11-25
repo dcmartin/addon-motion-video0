@@ -147,7 +147,7 @@ process_config_camera_v4l2()
   
   # set v4l2_pallette
   value=$(echo "${config:-null}" | jq -r ".v4l2_pallette")
-  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=15; fi
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=17; fi
   json=$(echo "${json}" | jq '.v4l2_palette='${value})
   sed -i "s/^v4l2_palette\s[0-9]\+/v4l2_palette ${value}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"v4l2_palette":'"${value}"

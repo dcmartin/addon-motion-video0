@@ -66,6 +66,7 @@ threshold_tune off
 timelapse_filename %Y%m%d-timelapse
 timelapse_interval 0
 timelapse_mode daily
+v4l2_palette 17
 vid_control_params hue=0 saturation=0 brightness=0 contrast=0
 webcontrol_interface 0
 webcontrol_localhost off
