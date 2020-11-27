@@ -930,7 +930,7 @@ for (( i=0; i < ncamera; i++)); do
     VALUE=$(jq -r '.default.type' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="netcam"; fi
   fi
-  TYPE="${VALUE}"
+  CAMERA_TYPE="${VALUE}"
   motion.log.debug "Set type to ${VALUE}"
   CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
 
@@ -1043,9 +1043,8 @@ for (( i=0; i < ncamera; i++)); do
   CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
   TARGET_DIR="${VALUE}"
 
-
-  # TYPE
-  case "${TYPE}" in
+  # CAMERA_TYPE
+  case "${CAMERA_TYPE}" in
     local|netcam)
         # username and password for mjpeg camera are motioncam_userpass
         VALUE=$(jq -r '.cameras['${i}'].motioncam_userpass' "${CONFIG_PATH}")
@@ -1058,8 +1057,8 @@ for (( i=0; i < ncamera; i++)); do
         motion.log.debug "Set username to ${PASSWORD}"
         CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
 
-        motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${TYPE}"
-        CAMERAS="${CAMERAS}"',"type":"'"${TYPE}"'"'
+        motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
+        CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
 	;;
     ftpd|mqtt)
         # username and password for mjpeg camera are the same as netcam_userpass
@@ -1074,9 +1073,8 @@ for (( i=0; i < ncamera; i++)); do
         motion.log.debug "Set username to ${PASSWORD}"
         CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
 
-        TYPE="${VALUE}"
-        motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${TYPE}"
-        CAMERAS="${CAMERAS}"',"type":"'"${TYPE}"'"'
+        motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
+        CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
 
         # live
         VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
@@ -1087,7 +1085,7 @@ for (( i=0; i < ncamera; i++)); do
         fi
 
         # FTP share_dir
-        if [ "${TYPE}" == 'ftpd' ]; then
+        if [ "${CAMERA_TYPE}" == 'ftpd' ]; then
           VALUE="${MOTION_SHARE_DIR%/*}/ftp/${CNAME}"
           motion.log.debug "Set share_dir to ${VALUE}"
           CAMERAS="${CAMERAS}"',"share_dir":"'"${VALUE}"'"'
@@ -1098,9 +1096,9 @@ for (( i=0; i < ncamera; i++)); do
         continue
 	;;
     *)
-        TYPE="unknown"
-        motion.log.error "Camera: ${CNAME}; number: ${CNUM}; invalid camera type: ${VALUE}; setting to ${TYPE}; skipping"
-        CAMERAS="${CAMERAS}"',"type":"'"${TYPE}"'"'
+        motion.log.error "Camera: ${CNAME}; number: ${CNUM}; invalid camera type: ${CAMERA_TYPE}; setting to unknown; skipping"
+        CAMERA_TYPE="unknown"
+        CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
         # complete
         CAMERAS="${CAMERAS}"'}'
         continue
@@ -1209,7 +1207,7 @@ for (( i=0; i < ncamera; i++)); do
   echo "threshold ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"threshold":'"${VALUE}"
 
-  if [ "${TYPE}" == 'netcam' ]; then
+  if [ "${CAMERA_TYPE}" == 'netcam' ]; then
     # network camera
     VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
     if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-null}" != 'null' ]; then
@@ -1247,7 +1245,7 @@ for (( i=0; i < ncamera; i++)); do
       CAMERAS="${CAMERAS}"'}'
       continue;
     fi
-  elif [ "${TYPE}" == 'local' ]; then
+  elif [ "${CAMERA_TYPE}" == 'local' ]; then
     # local camera
     VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
     if [ "${VALUE:-null}" != 'null' ] ; then
@@ -1267,7 +1265,7 @@ for (( i=0; i < ncamera; i++)); do
     echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
     motion.log.debug "Set palette to ${VALUE}"
   else
-    motion.log.error "Invalid camera type: ${TYPE}"
+    motion.log.error "Invalid camera type: ${CAMERA_TYPE}"
   fi
 
   # close CAMERAS structure

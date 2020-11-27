@@ -11,7 +11,7 @@
 ###
 
 if [ -s /etc/motion/motion.json ]; then
-  echo '{"timestamp":"'$(date -u +%FZ%TZ)'","config":'; \
+  echo '{"timestamp":"'$(date -u +%FT%TZ)'","config":'; \
   cat /etc/motion/motion.json
   echo '}'
 else
