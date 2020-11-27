@@ -928,8 +928,9 @@ for (( i=0; i < ncamera; i++)); do
   VALUE=$(jq -r '.cameras['${i}'].type' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
     VALUE=$(jq -r '.default.type' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="wcv80n"; fi
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="netcam"; fi
   fi
+  TYPE="${VALUE}"
   motion.log.debug "Set type to ${VALUE}"
   CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
 
@@ -945,18 +946,6 @@ for (( i=0; i < ncamera; i++)); do
   if [ "${VALUE:-null}" = 'null' ]; then VALUE='cctv'; fi
   motion.log.debug "Set icon to ${VALUE}"
   CAMERAS="${CAMERAS}"',"icon":"'"${VALUE}"'"'
-
-  # username
-  VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
-  if [ "${VALUE:-null}" = 'null' ]; then
-    VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass')
-  fi
-  USERNAME=${VALUE%%:*}
-  PASSWORD=${VALUE##*:}
-  motion.log.debug "Set username to ${USERNAME}"
-  CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
-  motion.log.debug "Set username to ${PASSWORD}"
-  CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
 
   # w3w
   VALUE=$(jq '.cameras['${i}'].w3w?' "${CONFIG_PATH}")
@@ -1054,15 +1043,37 @@ for (( i=0; i < ncamera; i++)); do
   CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
   TARGET_DIR="${VALUE}"
 
+
   # TYPE
-  VALUE=$(jq -r '.cameras['${i}'].type' "${CONFIG_PATH}")
-  case "${VALUE}" in
+  case "${TYPE}" in
     local|netcam)
-        TYPE="${VALUE}"
+        # username and password for mjpeg camera are motioncam_userpass
+        VALUE=$(jq -r '.cameras['${i}'].motioncam_userpass' "${CONFIG_PATH}")
+        if [ "${VALUE:-null}" = 'null' ]; then
+          USERNAME=$(echo "${MOTION}" | jq -r '.username')
+          PASSWORD=$(echo "${MOTION}" | jq -r '.password')
+        fi
+        motion.log.debug "Set username to ${USERNAME}"
+        CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
+        motion.log.debug "Set username to ${PASSWORD}"
+        CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
+
         motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${TYPE}"
         CAMERAS="${CAMERAS}"',"type":"'"${TYPE}"'"'
 	;;
     ftpd|mqtt)
+        # username and password for mjpeg camera are the same as netcam_userpass
+        VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
+        if [ "${VALUE:-null}" = 'null' ]; then
+          VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass')
+        fi
+        USERNAME=${VALUE%%:*}
+        PASSWORD=${VALUE##*:}
+        motion.log.debug "Set username to ${USERNAME}"
+        CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
+        motion.log.debug "Set username to ${PASSWORD}"
+        CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
+
         TYPE="${VALUE}"
         motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${TYPE}"
         CAMERAS="${CAMERAS}"',"type":"'"${TYPE}"'"'
