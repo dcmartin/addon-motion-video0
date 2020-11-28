@@ -5,8 +5,8 @@ emulate_motion off
 event_gap 5
 framerate 5
 height 480
-lightswitch_frames: 5
-lightswitch_percent 50
+lightswitch_frames 5
+lightswitch_percent 0
 locate_motion_mode off
 locate_motion_style box
 log_file /tmp/motion.log

@@ -1183,6 +1183,20 @@ for (( i=0; i < ncamera; i++)); do
   CAMERAS="${CAMERAS}"',"stream_quality":'"${VALUE}"
   motion.log.debug "Set stream_quality to ${VALUE}"
 
+  # lightswitch_percent
+  VALUE=$(jq -r '.cameras['${i}'].lightswitch_percent' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.lightswitch_percent'); fi
+  echo "lightswitch_percent ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"lightswitch_percent":'"${VALUE}"
+  motion.log.debug "Set lightswitch_percent to ${VALUE}"
+
+  # lightswitch_frames
+  VALUE=$(jq -r '.cameras['${i}'].lightswitch_frames' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.lightswitch_frames'); fi
+  echo "lightswitch_frames ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"lightswitch_frames":'"${VALUE}"
+  motion.log.debug "Set lightswitch_frames to ${VALUE}"
+
   # threshold 
   VALUE=$(jq -r '.cameras['${i}'].threshold_percent' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE:-0} == 0 ]; then 
@@ -1323,6 +1337,9 @@ for (( i = 1; i <= MOTION_COUNT;  i++)); do
   # get next configuration
   CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
 done
+
+# make the options available to the apache client
+chmod ow+rx /data /data/options.json
 
 if [ ${#PID_FILES[@]} -le 0 ]; then
   motion.log.info "ZERO motion daemons"
