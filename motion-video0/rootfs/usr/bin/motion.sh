@@ -1339,7 +1339,7 @@ for (( i = 1; i <= MOTION_COUNT;  i++)); do
 done
 
 # make the options available to the apache client
-chmod ow+rx /data /data/options.json
+chmod go+rx /data /data/options.json
 
 if [ ${#PID_FILES[@]} -le 0 ]; then
   motion.log.info "ZERO motion daemons"
