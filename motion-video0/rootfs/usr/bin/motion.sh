@@ -621,11 +621,10 @@ motion.log.debug "Set netcam_userpass to ${VALUE}"
 
 # set v4l2_palette
 VALUE=$(jq -r ".default.palette" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  sed -i "s/^v4l2_palette .*/v4l2_palette ${VALUE}/" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"palette":'"${VALUE}"
-  motion.log.debug "Set palette to ${VALUE}"
-fi
+if [ "${VALUE:-}" = "null" ]; then VALUE=17; fi
+sed -i "s/^v4l2_palette .*/v4l2_palette ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"palette":'"${VALUE}"
+motion.log.debug "Set palette to ${VALUE}"
 
 # set pre_capture
 VALUE=$(jq -r ".default.pre_capture" "${CONFIG_PATH}")
@@ -839,10 +838,9 @@ MOTION="${MOTION}"',"threshold":'"${VALUE:-null}"
 
 # set threshold_maximum
 VALUE=$(jq -r ".default.threshold_maximum" "${CONFIG_PATH}")
-if [ "${VALUE:-null}" != "null" ]; then
-  motion.log.debug "Set threshold_maximum to ${VALUE}"
-  sed -i "s/^threshold_maximum .*/threshold_maximum ${VALUE}/" "${MOTION_CONF}"
-fi
+if [ "${VALUE:-null}" = "null" ]; then VALUE=0; fi
+motion.log.debug "Set threshold_maximum to ${VALUE}"
+sed -i "s/^threshold_maximum .*/threshold_maximum ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold_maximum":'"${VALUE:-0}"
 
 # set threshold_tune (on/off)
@@ -854,19 +852,17 @@ MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
 
 # set lightswitch percent
 VALUE=$(jq -r ".default.lightswitch_percent" "${CONFIG_PATH}")
-if [ "${VALUE:-null}" != "null" ]; then
-  motion.log.debug "Set lightswitch percent to ${VALUE}"
-  sed -i "s/^lightswitch_percent .*/lightswitch_percent ${VALUE}/" "${MOTION_CONF}"
-fi
+if [ "${VALUE:-null}" = "null" ]; then VALUE=0; fi
+motion.log.debug "Set lightswitch percent to ${VALUE}"
+sed -i "s/^lightswitch_percent .*/lightswitch_percent ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"lightswitch_percent":'"${VALUE:-null}"
 
 # set lightswitch frames
 VALUE=$(jq -r ".default.lightswitch_frames" "${CONFIG_PATH}")
-if [ "${VALUE:-null}" != "null" ]; then
-  motion.log.debug "Set lightswitch frames to ${VALUE}"
-  sed -i "s/^lightswitch_frames .*/lightswitch_frames ${VALUE}/" "${MOTION_CONF}"
-fi
-MOTION="${MOTION}"',"lightswitch_frames":'"${VALUE:-0}"
+if [ "${VALUE:-null}" = "null" ]; then VALUE=5; fi
+motion.log.debug "Set lightswitch frames to ${VALUE}"
+sed -i "s/^lightswitch_frames .*/lightswitch_frames ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"lightswitch_frames":'"${VALUE}"
 
 # set movie_max_time
 VALUE=$(jq -r ".default.movie_max_time" "${CONFIG_PATH}")

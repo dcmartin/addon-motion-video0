@@ -138,7 +138,7 @@ service-push:
 	  $(MAKE) TAG=$(TAG) HZN_ORG_ID=$(HZN_ORG_ID) DOCKER_REPOSITORY=$(DOCKER_REPOSITORY) BUILD_ARCH="$${arch}" push-service; \
 	done
 
-service-manifest:
+service-manifest: service-push
 	@echo "${MC}>>> MAKE --" $$(date +%T) "-- service-manifest: ${SERVICE_NAME}; architectures: ${SERVICE_ARCH_SUPPORT}""${NC}" > /dev/stderr
 	@for arch in ${SERVICE_ARCH_SUPPORT}; do \
 	  amendments="$${amendments:-} -a ${DOCKER_NAMESPACE}/$${arch}-${SERVICE_ID}:${SERVICE_VERSION}"; \
