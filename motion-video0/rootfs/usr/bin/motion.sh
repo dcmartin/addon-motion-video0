@@ -672,10 +672,23 @@ motion.log.debug "Set picture_quality to ${VALUE}"
 VALUE=$(jq -r ".default.framerate" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
 sed -i "s/^framerate .*/framerate ${VALUE}/" "${MOTION_CONF}"
-sed -i "s/^stream_maxrate .*/stream_maxrate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"framerate":'"${VALUE}"
-MOTION="${MOTION}"',"stream_maxrate":'"${VALUE}"
 motion.log.debug "Set framerate to ${VALUE}"
+FRAMERATE=${VALUE}
+
+# set stream_maxrate
+VALUE=$(jq -r ".default.stream_maxrate" "${CONFIG_PATH}")
+if [ "${VALUE:-null}" = "null" ] || [ ${VALUE} -eq 0 ]; then VALUE=${FRAMERATE}; fi
+motion.log.debug "Set stream_maxrate to ${VALUE}"
+sed -i "s/^stream_maxrate .*/stream_maxrate ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"stream_maxrate":'"${VALUE}"
+
+# set stream_motion
+VALUE=$(jq -r ".default.stream_motion" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE='on'; fi
+sed -i "s/^stream_motion .*/stream_motion ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"stream_motion":"'"${VALUE}"'"'
+motion.log.debug "Set stream_motion to ${VALUE}"
 
 # set text_changes
 VALUE=$(jq -r ".default.changes" "${CONFIG_PATH}")
@@ -759,6 +772,13 @@ motion.log.debug "Set rotate to ${VALUE}"
 sed -i "s/^rotate .*/rotate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"rotate":'"${VALUE}"
 
+# set webcontrol_parms
+VALUE=$(jq -r ".default.webcontrol_parms" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
+motion.log.debug "Set webcontrol_parms to ${VALUE}"
+sed -i "s/^webcontrol_parms .*/webcontrol_parms ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"webcontrol_parms":'"${VALUE}"
+
 # set webcontrol_port
 VALUE=$(jq -r ".default.webcontrol_port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
@@ -796,65 +816,64 @@ MOTION="${MOTION}"',"height":'"${VALUE}"
 HEIGHT=${VALUE}
 motion.log.debug "Set height to ${VALUE}"
 
-# set threshold_percent
-VALUE=$(jq -r ".default.threshold_percent" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE:-0} == 0 ]; then 
-  VALUE=$(jq -r ".default.threshold" "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
-    VALUE=10
-    motion.log.debug "DEFAULT threshold_percent to ${VALUE}"
-    MOTION="${MOTION}"',"threshold_percent":'"${VALUE}"
-    VALUE=$((VALUE * WIDTH * HEIGHT / 100))
+## THRESHOLD
+
+VALUE=$(jq -r ".default.threshold" "${CONFIG_PATH}")
+if [ "${VALUE:-null}" = 'null' ] || [ ${VALUE:-0} -le 0 ]; then 
+  VALUE=$(jq -r ".default.threshold_percent" "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" != 'null' ] && [ ${VALUE:-0} -gt 0 ]; then 
+    PCT=${VALUE}
+    VALUE=$(echo "${PCT} * ( ${WIDTH} * ${HEIGHT} ) / 100.0" | bc -l) && VALUE=${VALUE%%.*}
   fi
-else
-  motion.log.debug "Set threshold_percent to ${VALUE}"
-  MOTION="${MOTION}"',"threshold_percent":'"${VALUE}"
-  VALUE=$((VALUE * WIDTH * HEIGHT / 100))
 fi
-# set threshold
+if [ "${PCT:-null}" = 'null' ]; then 
+  PCT=$(echo "${VALUE} / ( ${WIDTH} * ${HEIGHT} ) * 100.0" | bc -l) && PCT=${PCT%%.*}
+  PCT=${PCT:-null}
+fi
+
+motion.log.debug "Set threshold_percent to ${PCT}"
+MOTION="${MOTION}"',"threshold_percent":'"${PCT}"
 motion.log.debug "Set threshold to ${VALUE}"
 sed -i "s/^threshold .*/threshold ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"threshold":'"${VALUE}"
+MOTION="${MOTION}"',"threshold":'"${VALUE:-null}"
 
 # set threshold_maximum
 VALUE=$(jq -r ".default.threshold_maximum" "${CONFIG_PATH}")
-if [ "${VALUE:-}" != "null" ]; then
+if [ "${VALUE:-null}" != "null" ]; then
   motion.log.debug "Set threshold_maximum to ${VALUE}"
   sed -i "s/^threshold_maximum .*/threshold_maximum ${VALUE}/" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"threshold_maximum":'"${VALUE}"
 fi
+MOTION="${MOTION}"',"threshold_maximum":'"${VALUE:-0}"
 
 # set threshold_tune (on/off)
 VALUE=$(jq -r ".default.threshold_tune" "${CONFIG_PATH}")
-if [ "${VALUE:-null}" != "null" ]; then
-  sed -i "s/^threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
-  motion.log.debug "Set threshold_tune to ${VALUE}"
-fi
+if [ "${VALUE:-null}" = 'null' ]; then VALUE='off'; fi
+motion.log.debug "Set threshold_tune to ${VALUE}"
+sed -i "s/^threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
 
 # set lightswitch percent
 VALUE=$(jq -r ".default.lightswitch_percent" "${CONFIG_PATH}")
 if [ "${VALUE:-null}" != "null" ]; then
   motion.log.debug "Set lightswitch percent to ${VALUE}"
   sed -i "s/^lightswitch_percent .*/lightswitch_percent ${VALUE}/" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"lightswitch_percent":'"${VALUE}"
 fi
+MOTION="${MOTION}"',"lightswitch_percent":'"${VALUE:-null}"
 
 # set lightswitch frames
 VALUE=$(jq -r ".default.lightswitch_frames" "${CONFIG_PATH}")
 if [ "${VALUE:-null}" != "null" ]; then
   motion.log.debug "Set lightswitch frames to ${VALUE}"
   sed -i "s/^lightswitch_frames .*/lightswitch_frames ${VALUE}/" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"lightswitch_frames":'"${VALUE}"
 fi
+MOTION="${MOTION}"',"lightswitch_frames":'"${VALUE:-0}"
 
 # set movie_max_time
 VALUE=$(jq -r ".default.movie_max_time" "${CONFIG_PATH}")
-if [ "${VALUE:-}" != "null" ]; then
-  motion.log.debug "Set movie_max_time to ${VALUE}"
-  sed -i "s/^movie_max_time .*/movie_max_time ${VALUE}/" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"movie_max_time":'"${VALUE}"
-fi
+if [ "${VALUE:-null}" = "null" ]; then VALUE="30"; fi
+motion.log.debug "Set movie_max_time to ${VALUE}"
+sed -i "s/^movie_max_time .*/movie_max_time ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"movie_max_time":'"${VALUE:-30}"
 
 # set interval for events
 VALUE=$(jq -r '.default.interval' "${CONFIG_PATH}")
@@ -900,7 +919,7 @@ MOTION="${MOTION}"'}'
 ## append to configuration JSON
 JSON="${JSON}"',"motion":'"${MOTION}"
 
-motion.log.debug "MOTION: $(echo "${MOTION}" | jq -c '.')"
+motion.log.debug "MOTION: ${MOTION}"
 
 ###
 ### process cameras 
@@ -1009,27 +1028,41 @@ for (( i=0; i < ncamera; i++)); do
 
   # movie_max_time 
   VALUE=$(jq -r '.cameras['${i}'].movie_max_time' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.movie_max_time'); fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.movie_max_time') && VALUE=${VALUE:-30}; fi
   CAMERAS="${CAMERAS}"',"movie_max_time":'"${VALUE}"
   motion.log.debug "Set movie_max_time to ${VALUE}"
   MOVIE_MAX_TIME=${VALUE}
 
-  # process camera framerate; set on wcv80n web GUI; default 6
+  # framerate
   VALUE=$(jq -r '.cameras['${i}'].framerate' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
     VALUE=$(jq -r '.framerate' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=$(echo "${MOTION}" | jq -r '.framerate'); fi
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=$(echo "${MOTION}" | jq -r '.framerate') && VALUE=${VALUE:-5}; fi
   fi
   motion.log.debug "Set framerate to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"stream_maxrate":'"${VALUE}"
   CAMERAS="${CAMERAS}"',"framerate":'"${VALUE}"
   FRAMERATE=${VALUE}
+
+  # stream_maxrate 
+  VALUE=$(jq -r '.cameras['${i}'].stream_maxrate' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_maxrate') && VALUE=${VALUE:-0}; fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${STREAM_MAXRATE} -gt ${FRAMERATE} ]; then VALUE=${FRAMERATE}; fi
+  CAMERAS="${CAMERAS}"',"stream_maxrate":'"${VALUE}"
+  motion.log.debug "Set stream_maxrate to ${VALUE}"
+  STREAM_MAXRATE=${VALUE}
+
+  # stream_motion
+  VALUE=$(jq -r '.cameras['${i}'].stream_motion' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_motion') && VALUE=${VALUE:-off}; fi
+  motion.log.debug "Set stream_motion to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"stream_motion":"'"${VALUE}"'"'
+  STREAM_MOTION=${VALUE}
 
   # process camera event_gap; set on wcv80n web GUI; default 6
   VALUE=$(jq -r '.cameras['${i}'].event_gap' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
     VALUE=$(jq -r '.event_gap' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=$(echo "${MOTION}" | jq -r '.event_gap'); fi
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=$(echo "${MOTION}" | jq -r '.event_gap') && VALUE=${VALUE:-5}; fi
   fi
   motion.log.debug "Set event_gap to ${VALUE}"
   CAMERAS="${CAMERAS}"',"event_gap":'"${VALUE}"
@@ -1077,12 +1110,18 @@ for (( i=0; i < ncamera; i++)); do
         CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
 
         # live
-        VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
-        if [ "${VALUE}" != "null" ] || [ ! -z "${VALUE}" ]; then 
-          CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
-          motion.log.debug "Set mjpeg_url to ${VALUE}"
-          CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
+        VALUE=$(jq -r '.cameras['${i}'].mjpeg_url' "${CONFIG_PATH}")
+        if [ "${VALUE:-null}" = 'null' ]; then 
+          VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
+          if [ "${VALUE}" != "null" ] || [ ! -z "${VALUE}" ]; then 
+            CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
+	  else
+            motion.log.warn "Camera: ${CNAME}; both mjpeg_url and netcam_url are undefined; no live stream"
+	    VALUE=''
+          fi
         fi
+        motion.log.debug "Set mjpeg_url to ${VALUE}"
+        CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
 
         # FTP share_dir
         if [ "${CAMERA_TYPE}" == 'ftpd' ]; then
@@ -1142,8 +1181,11 @@ for (( i=0; i < ncamera; i++)); do
   CAMERAS="${CAMERAS}"',"cnum":'"${CNUM}"
   CAMERAS="${CAMERAS}"',"conf":"'"${CAMERA_CONF}"'"'
 
-  # calculate mjpeg_url for camera
-  VALUE="http://${ipaddr}:${MOTION_STREAM_PORT}/${CNUM}"
+  VALUE=$(jq -r '.cameras['${i}'].mjpeg_url' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then 
+    # calculate mjpeg_url for camera
+    VALUE="http://${ipaddr}:${MOTION_STREAM_PORT}/${CNUM}"
+  fi
   motion.log.debug "Set mjpeg_url to ${VALUE}"
   CAMERAS="${CAMERAS}"',"mjpeg_url":"'${VALUE}'"'
 
@@ -1159,67 +1201,90 @@ for (( i=0; i < ncamera; i++)); do
   echo "height ${HEIGHT}" >> "${CAMERA_CONF}"
   echo "movie_max_time ${MOVIE_MAX_TIME}" >> "${CAMERA_CONF}"
   echo "framerate ${FRAMERATE}" >> "${CAMERA_CONF}"
-  echo "stream_maxrate ${FRAMERATE}" >> "${CAMERA_CONF}"
+  echo "stream_motion ${STREAM_MOTION}" >> "${CAMERA_CONF}"
+  echo "stream_maxrate ${STREAM_MAXRATE}" >> "${CAMERA_CONF}"
   echo "event_gap ${EVENT_GAP}" >> "${CAMERA_CONF}"
+
+  # pre_capture
+  VALUE=$(jq -r '.cameras['${i}'].pre_capture' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.pre_capture') && VALUE=${VALUE:-0}; fi
+  motion.log.debug "Set pre_capture to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"pre_capture":'"${VALUE}"
+  echo "pre_capture ${VALUE}" >> "${CAMERA_CONF}"
+
+  # post_capture
+  VALUE=$(jq -r '.cameras['${i}'].post_capture' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.post_capture') && VALUE=${VALUE:-0}; fi
+  motion.log.debug "Set post_capture to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"post_capture":'"${VALUE}"
+  echo "post_capture ${VALUE}" >> "${CAMERA_CONF}"
 
   # rotate 
   VALUE=$(jq -r '.cameras['${i}'].rotate' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate'); fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate') && VALUE=${VALUE:-0}; fi
   motion.log.debug "Set rotate to ${VALUE}"
-  echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"rotate":'"${VALUE}"
+  echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
 
   # picture_quality 
   VALUE=$(jq -r '.cameras['${i}'].picture_quality' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.picture_quality'); fi
-  echo "picture_quality ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"picture_quality":'"${VALUE}"
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.picture_quality') && VALUE=${VALUE:-100}; fi
   motion.log.debug "Set picture_quality to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"picture_quality":'"${VALUE}"
+  echo "picture_quality ${VALUE}" >> "${CAMERA_CONF}"
 
   # stream_quality 
   VALUE=$(jq -r '.cameras['${i}'].stream_quality' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_quality'); fi
-  echo "stream_quality ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"stream_quality":'"${VALUE}"
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_quality') && VALUE=${VALUE:-100}; fi
   motion.log.debug "Set stream_quality to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"stream_quality":'"${VALUE}"
+  echo "stream_quality ${VALUE}" >> "${CAMERA_CONF}"
 
   # lightswitch_percent
   VALUE=$(jq -r '.cameras['${i}'].lightswitch_percent' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.lightswitch_percent'); fi
-  echo "lightswitch_percent ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"lightswitch_percent":'"${VALUE}"
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.lightswitch_percent') && VALUE=${VALUE:-0}; fi
   motion.log.debug "Set lightswitch_percent to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"lightswitch_percent":'"${VALUE}"
+  echo "lightswitch_percent ${VALUE}" >> "${CAMERA_CONF}"
 
   # lightswitch_frames
   VALUE=$(jq -r '.cameras['${i}'].lightswitch_frames' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.lightswitch_frames'); fi
-  echo "lightswitch_frames ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"lightswitch_frames":'"${VALUE}"
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.lightswitch_frames') && VALUE=${VALUE:-5}; fi
   motion.log.debug "Set lightswitch_frames to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"lightswitch_frames":'"${VALUE}"
+  echo "lightswitch_frames ${VALUE}" >> "${CAMERA_CONF}"
 
-  # threshold 
-  VALUE=$(jq -r '.cameras['${i}'].threshold_percent' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE:-0} == 0 ]; then 
-    VALUE=$(jq -r '.cameras['${i}'].threshold' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
-      VALUE=$(echo "${MOTION}" | jq -r '.threshold_percent')
-      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE:-0} == 0 ]; then 
-        VALUE=$(echo "${MOTION}" | jq -r '.threshold')
-      else
-        motion.log.debug "Set threshold_percent to ${VALUE}"
-        CAMERAS="${CAMERAS}"',"threshold_percent":'"${VALUE}"
-        VALUE=$((VALUE * WIDTH * HEIGHT / 100))
-      fi
+
+  ## THRESHOLD
+
+  VALUE=$(jq -r '.cameras['${i}'].threshold' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ] || [ ${VALUE:-0} -le 0 ]; then 
+    PCT=$(jq -r '.cameras['${i}'].threshold_percent' "${CONFIG_PATH}")
+    if [ "${PCT:-null}" = 'null' ] || [ ${PCT:-0} -le 0 ]; then PCT=$(echo "${MOTION}" | jq -r '.threshold_percent'); fi
+    if [ "${PCT:-null}" != 'null' ] && [ ${PCT:-0} -gt 0 ]; then 
+      VALUE=$(echo "${PCT} * ( ${WIDTH} * ${HEIGHT} ) / 100.0" | bc -l) && VALUE=${VALUE%%.*}
     fi
-  else
-    # threshold as percent
-    motion.log.debug "Set threshold_percent to ${VALUE}"
-    CAMERAS="${CAMERAS}"',"threshold_percent":'"${VALUE}"
-    VALUE=$((VALUE * WIDTH * HEIGHT / 100))
   fi
-  motion.log.debug "Set threshold to ${VALUE}"
-  echo "threshold ${VALUE}" >> "${CAMERA_CONF}"
+  if [ "${VALUE:-null}" = 'null' ] || [ ${VALUE:-0} -le 0 ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold'); fi 
+  if [ "${PCT:-null}" = 'null' ] || [ ${PCT:-0} -le 0 ]; then PCT=$(echo "${VALUE} / ( ${WIDTH} * ${HEIGHT} ) * 100.0" | bc -l) && PCT=${PCT%%.*}; PCT=${PCT:-null}; fi
+
+  motion.log.debug "Camera ${NAME}: set threshold_percent to ${PCT}"
+  CAMERAS="${CAMERAS}"',"threshold_percent":'"${PCT}"
+  motion.log.debug "Camera ${NAME}: set threshold to ${VALUE}"
   CAMERAS="${CAMERAS}"',"threshold":'"${VALUE}"
+  echo "threshold ${VALUE}" >> "${CAMERA_CONF}"
+
+  # set threshold_maximum
+  VALUE=$(jq -r '.cameras['${i}'].threshold_maximum' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" == "null" ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold_maximum') && VALUE=${VALUE:-0}; fi
+  CAMERAS="${CAMERAS}"',"threshold_maximum":'"${VALUE:-0}"
+  echo "threshold_maximum ${VALUE:-0}" >> "${CAMERA_CONF}"
+
+  # set threshold_tune
+  VALUE=$(jq -r '.cameras['${i}'].threshold_tune' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold_tune') && VALUE=${VALUE:-off}; fi
+  CAMERAS="${CAMERAS}"',"threshold_tune":"'"${VALUE}"'"'
+  echo "threshold_tune ${VALUE}" >> "${CAMERA_CONF}"
 
   if [ "${CAMERA_TYPE}" == 'netcam' ]; then
     # network camera
