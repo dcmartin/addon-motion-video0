@@ -1042,7 +1042,7 @@ for (( i=0; i < ncamera; i++)); do
   # stream_maxrate 
   VALUE=$(jq -r '.cameras['${i}'].stream_maxrate' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_maxrate') && VALUE=${VALUE:-0}; fi
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${STREAM_MAXRATE} -gt ${FRAMERATE} ]; then VALUE=${FRAMERATE}; fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${STREAM_MAXRATE:-0} -gt ${FRAMERATE} ]; then VALUE=${FRAMERATE}; fi
   CAMERAS="${CAMERAS}"',"stream_maxrate":'"${VALUE}"
   motion.log.debug "Set stream_maxrate to ${VALUE}"
   STREAM_MAXRATE=${VALUE}
@@ -1058,7 +1058,7 @@ for (( i=0; i < ncamera; i++)); do
   VALUE=$(jq -r '.cameras['${i}'].event_gap' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
     VALUE=$(jq -r '.event_gap' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=$(echo "${MOTION}" | jq -r '.event_gap') && VALUE=${VALUE:-5}; fi
+    if [ "${VALUE:-null}" = "null" ] || [ ${VALUE:-0} -lt 1 ]; then VALUE=$(echo "${MOTION}" | jq -r '.event_gap') && VALUE=${VALUE:-5}; fi
   fi
   motion.log.debug "Set event_gap to ${VALUE}"
   CAMERAS="${CAMERAS}"',"event_gap":'"${VALUE}"
