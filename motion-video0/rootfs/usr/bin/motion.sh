@@ -1122,8 +1122,9 @@ for (( i=0; i < ncamera; i++)); do
         CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
 
         # addon_api
-        if [ "${CAMERA_TYPE}" = 'ftpd' ]; then
-          CAMERAS="${CAMERAS}"',"addon_api":"'${VALUE%:*}:${MOTION_APACHE_PORT}'"'
+        if [ "${CAMERA_TYPE}" != 'ftpd' ]; then
+          VALUE="${VALUE##*//}" && VALUE=${VALUE%%/*} && VALUE=${VALUE%%:*} && VALUE="http://${VALUE}:${MOTION_APACHE_PORT}"
+          CAMERAS="${CAMERAS}"',"addon_api":"'${VALUE}'"'
         else
           CAMERAS="${CAMERAS}"',"addon_api":"'${ADDON_API}'"'
         fi
