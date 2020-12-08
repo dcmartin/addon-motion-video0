@@ -291,6 +291,9 @@ start_motion()
 ipaddr=$(ip addr | egrep -A4 UP | egrep 'inet ' | egrep -v 'scope host lo' | egrep -v 'scope global docker' | awk '{ print $2 }')
 ipaddr=${ipaddr%%/*}
 
+## add-on API
+ADDON_API="http://${ipaddr}:${MOTION_APACHE_PORT}"
+
 ## build internal configuration
 JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'${ipaddr}'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
 
@@ -1085,7 +1088,6 @@ for (( i=0; i < ncamera; i++)); do
         CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
         motion.log.debug "Set username to ${PASSWORD}"
         CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
-
         motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
         CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
 	;;
@@ -1118,6 +1120,13 @@ for (( i=0; i < ncamera; i++)); do
         fi
         motion.log.debug "Set mjpeg_url to ${VALUE}"
         CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
+
+        # addon_api
+        if [ "${CAMERA_TYPE}" = 'ftpd' ]; then
+          CAMERAS="${CAMERAS}"',"addon_api":"'${VALUE%:*}:${MOTION_APACHE_PORT}'"'
+        else
+          CAMERAS="${CAMERAS}"',"addon_api":"'${ADDON_API}'"'
+        fi
 
         # FTP share_dir
         if [ "${CAMERA_TYPE}" == 'ftpd' ]; then
@@ -1184,6 +1193,9 @@ for (( i=0; i < ncamera; i++)); do
   fi
   motion.log.debug "Set mjpeg_url to ${VALUE}"
   CAMERAS="${CAMERAS}"',"mjpeg_url":"'${VALUE}'"'
+
+  # addon_api
+  CAMERAS="${CAMERAS}"',"addon_api":"'${ADDON_API}'"'
 
   ##
   ## make camera configuration file
