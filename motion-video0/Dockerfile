@@ -4,74 +4,90 @@ FROM ${BUILD_FROM}
 
 ENV LANG C.UTF-8
 
-#RUN \
-#    apk add --no-cache --virtual .build-dependencies \
-#        autoconf=2.69-r2 \
-#        automake=1.16.2-r0 \
-#        build-base=0.5-r2 \
-#        curl-dev=7.69.1-r1 \
-#        ffmpeg-dev=4.3.1-r0 \
-#        gcc=9.3.0-r2 \
-#        gettext-dev=0.20.2-r0 \
-#        git=2.26.2-r0 \
-#        jpeg-dev=9d-r0 \
-#        libjpeg-turbo-dev=2.0.5-r0 \
-#        libmicrohttpd-dev=0.9.70-r0 \
-#        libwebp-dev=1.1.0-r0 \
-#        linux-headers=5.4.5-r1 \
-#        musl-dev \
-#        python2-dev=2.7.18-r0 \
-#        v4l-utils-dev=1.20.0-r0 \
-#    \
-#    && apk add --no-cache \
-#        cifs-utils=6.10-r1 \
-#        ffmpeg=4.3.1-r0 \
-#        ffmpeg-libs=4.3.1-r0 \
-#        libcurl=7.69.1-r1 \
-#        libjpeg=9d-r0 \
-#        libjpeg-turbo=2.0.5-r0 \
-#        libintl=0.20.2-r0 \
-#        libmicrohttpd=0.9.70-r0 \
-#        libwebp=1.1.0-r0 \
-#        mosquitto-clients=1.6.9-r0 \
-#        python2=2.7.18-r0 \
-#        v4l-utils=1.20.0-r0
-
 RUN \
     apk add --no-cache \
         musl musl-dev
+RUN \
+    apk add --no-cache \
+        autoconf=2.69-r2
+RUN \
+    apk add --no-cache \
+        automake=1.16.2-r0
+RUN \
+    apk add --no-cache \
+        build-base=0.5-r2
+RUN \
+    apk add --no-cache \
+        curl
+RUN \
+    apk add --no-cache \
+        ffmpeg-dev=4.3.1-r0
+RUN \
+    apk add --no-cache \
+        gcc=9.3.0-r2
+RUN \
+    apk add --no-cache \
+        gettext-dev=0.20.2-r0
+RUN \
+    apk add --no-cache \
+        git=2.26.2-r0
+RUN \
+    apk add --no-cache \
+        jpeg-dev=9d-r0
+RUN \
+    apk add --no-cache \
+        libjpeg-turbo-dev=2.0.5-r0
+RUN \
+    apk add --no-cache \
+        libmicrohttpd-dev=0.9.70-r0
+RUN \
+    apk add --no-cache \
+        libwebp-dev=1.1.0-r0
+RUN \
+    apk add --no-cache \
+        linux-headers=5.4.5-r1
+RUN \
+    apk add --no-cache \
+        python2-dev=2.7.18-r0
+RUN \
+    apk add --no-cache \
+        v4l-utils-dev=1.20.0-r0
 
 RUN \
     apk add --no-cache \
-        autoconf=2.69-r2 \
-        automake=1.16.2-r0 \
-        build-base=0.5-r2 \
-        curl-dev=7.69.1-r1 \
-        ffmpeg-dev=4.3.1-r0 \
-        gcc=9.3.0-r2 \
-        gettext-dev=0.20.2-r0 \
-        git=2.26.2-r0 \
-        jpeg-dev=9d-r0 \
-        libjpeg-turbo-dev=2.0.5-r0 \
-        libmicrohttpd-dev=0.9.70-r0 \
-        libwebp-dev=1.1.0-r0 \
-        linux-headers=5.4.5-r1 \
-        python2-dev=2.7.18-r0 \
-        v4l-utils-dev=1.20.0-r0
-
-RUN \ 
+        cifs-utils=6.10-r1
+RUN \
     apk add --no-cache \
-        cifs-utils=6.10-r1 \
-        ffmpeg=4.3.1-r0 \
-        ffmpeg-libs=4.3.1-r0 \
-        libcurl=7.69.1-r1 \
-        libjpeg=9d-r0 \
-        libjpeg-turbo=2.0.5-r0 \
-        libintl=0.20.2-r0 \
-        libmicrohttpd=0.9.70-r0 \
-        libwebp=1.1.0-r0 \
-        mosquitto-clients=1.6.9-r0 \
-        python2=2.7.18-r0 \
+        ffmpeg=4.3.1-r0
+RUN \
+    apk add --no-cache \
+        ffmpeg-libs=4.3.1-r0
+RUN \
+    apk add --no-cache \
+        libcurl
+RUN \
+    apk add --no-cache \
+        libjpeg=9d-r0
+RUN \
+    apk add --no-cache \
+        libjpeg-turbo=2.0.5-r0
+RUN \
+    apk add --no-cache \
+        libintl=0.20.2-r0
+RUN \
+    apk add --no-cache \
+        libmicrohttpd=0.9.70-r0
+RUN \
+    apk add --no-cache \
+        libwebp=1.1.0-r0
+RUN \
+    apk add --no-cache \
+        mosquitto-clients=1.6.9-r0
+RUN \
+    apk add --no-cache \
+        python2=2.7.18-r0
+RUN \
+    apk add --no-cache \
         v4l-utils=1.20.0-r0
 
 RUN MOTION_VERSION=4.3.1 \
@@ -94,13 +110,11 @@ RUN MOTION_VERSION=4.3.1 \
 RUN apk add --no-cache \
   bc \
   coreutils \
-  curl \
   dateutils \
   findutils \
   gettext \
   gawk \
   jq \
-  openssl-dev \
   git
 
 RUN apk add --no-cache \
@@ -120,42 +134,36 @@ RUN apk add --no-cache \
 RUN apk add --no-cache \
   tcsh@edge
 
-## LIVE555
-RUN \
-    apk add --no-cache \
-	live-media-dev \
-	git \
-	g++ \
-	make \
-    \
-    && apk add --no-cache \
-	live-media-utils
+### LIVE555
 
-RUN \
-    cd /tmp \
-    && \
-    git clone https://github.com/dcmartin/live555.git \
-    && \
-    cd live555 \
-    && \
-    sed -i -e 's/proxyStream\-\%d/stream%02d/g' ./proxyServer/live555ProxyServer.cpp \
-    && \
-    sed -i -e "s/proxyStream/stream/g" ./proxyServer/live555ProxyServer.cpp \
-    && \
-    ./genMakefiles linux
+#RUN \
+#    apk add --no-cache \
+#	git \
+#	g++ \
+#	make \
+#       openssl-dev \
+#	live-media-dev \
+#	live-media-utils
 
-RUN \
-    cd /tmp/live555 \
-    && \
-    make -j4
-
-RUN \
-    cd /tmp/live555 \
-    && \
-    cp proxyServer/live555ProxyServer /usr/local/bin/
-
-RUN \
-    rm -rf /tmp/*
+#RUN \
+#    && \
+#    cd /tmp \
+#    && \
+#    git clone https://github.com/dcmartin/live555.git \
+#    && \
+#    cd live555 \
+#    && \
+#    sed -i -e 's/proxyStream\-\%d/stream%02d/g' ./proxyServer/live555ProxyServer.cpp \
+#    && \
+#    sed -i -e "s/proxyStream/stream/g" ./proxyServer/live555ProxyServer.cpp \
+#    && \
+#    ./genMakefiles linux \
+#    && \
+#    make -j4 \
+#    && \
+#    cp proxyServer/live555ProxyServer /usr/local/bin/ \
+#    && \
+#    rm -rf /tmp/*
 
 RUN apk add --no-cache \
   openssh-client
@@ -199,7 +207,7 @@ ARG BUILD_VERSION
 # Labels
 LABEL \
     io.hass.name="MOTION" \
-    io.hass.description="Motion package as addon w/ support for image classification" \ 
+    io.hass.description="Motion package as addon w/ support for image classification" \
     io.hass.arch="${BUILD_ARCH}" \
     io.hass.type="addon" \
     io.hass.version=${BUILD_VERSION} \
