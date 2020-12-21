@@ -31,8 +31,8 @@ DOCKER_NAME = $(SERVICE_ID)
 DOCKER_TAG := $(DOCKER_REPOSITORY)/${BUILD_ARCH}-$(DOCKER_NAME):$(SERVICE_VERSION)
 
 ## ports
-DOCKER_PORT ?= $(shell jq -r '.ports?' config.json | sed 's/\([0-9]*\).*/\1/' | sed 's/null//')
-SERVICE_PORT ?= $(shell jq -r '.ports?' config.json | sed 's/[0-9]*[:]*\([0-9]*\).*/\1/' | sed 's/null//')
+DOCKER_PORT ?= $(shell jq -r '.ingress_port?' config.json)
+SERVICE_PORT ?= $(shell jq -r '.ingress_port?' config.json)
 SERVICE_PORT := $(if ${SERVICE_PORT},${SERVICE_PORT},$(if ${DOCKER_PORT},${DOCKER_PORT},80))
 DOCKER_PORT := $(if ${DOCKER_PORT},${DOCKER_PORT},$(shell echo "( $$$$ + 5000 ) % 32000 + 32000" | bc))
 
