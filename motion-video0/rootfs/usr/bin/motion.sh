@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bashio
 
 ## initiate logging
 export MOTION_LOG_LEVEL="${1}"
@@ -1277,9 +1277,9 @@ for (( i=0; i < ncamera; i++)); do
   if [ "${VALUE:-null}" = 'null' ] || [ ${VALUE:-0} -le 0 ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold'); fi 
   if [ "${PCT:-null}" = 'null' ] || [ ${PCT:-0} -le 0 ]; then PCT=$(echo "${VALUE} / ( ${WIDTH} * ${HEIGHT} ) * 100.0" | bc -l) && PCT=${PCT%%.*}; PCT=${PCT:-null}; fi
 
-  motion.log.debug "Camera ${NAME}: set threshold_percent to ${PCT}"
+  motion.log.debug "Camera ${CNAME:-}: set threshold_percent to ${PCT}"
   CAMERAS="${CAMERAS}"',"threshold_percent":'"${PCT}"
-  motion.log.debug "Camera ${NAME}: set threshold to ${VALUE}"
+  motion.log.debug "Camera ${CNAME:-}: set threshold to ${VALUE}"
   CAMERAS="${CAMERAS}"',"threshold":'"${VALUE}"
   echo "threshold ${VALUE}" >> "${CAMERA_CONF}"
 

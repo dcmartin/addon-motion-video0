@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/with-contenv bashio
 
 ###
 ### motion-tools.sh
@@ -278,47 +278,56 @@ MOTION_TIMESTAMP_FORMAT="${MOTION_TIMESTAMP_FORMAT:-${MOTION_TIMESTAMP_DEFAULT}}
 
 motion.log.emerg()
 { 
-  motion.log.logto ${MOTION_LOG_LEVEL_EMERG} "${*}"
+  bashio::log.emerg ${*}
+  # motion.log.logto ${MOTION_LOG_LEVEL_EMERG} "${*}"
 }
 
 motion.log.alert()
 {
-  motion.log.logto ${MOTION_LOG_LEVEL_ALERT} "${*}"
+  bashio::log.alert ${*}
+  # motion.log.logto ${MOTION_LOG_LEVEL_ALERT} "${*}"
 }
 
 motion.log.crit()
 {
-  motion.log.logto ${MOTION_LOG_LEVEL_CRIT} "${*}"
+  bashio::log.crit ${*}
+  # motion.log.logto ${MOTION_LOG_LEVEL_CRIT} "${*}"
 }
 
 motion.log.error()
 {
-  motion.log.logto ${MOTION_LOG_LEVEL_ERROR} "${*}"
+  bashio::log.error ${*}
+  # motion.log.logto ${MOTION_LOG_LEVEL_ERROR} "${*}"
 }
 
 motion.log.warn()
 {
-  motion.log.logto ${MOTION_LOG_LEVEL_WARN} "${*}"
+  bashio::log.warn ${*}
+  # motion.log.logto ${MOTION_LOG_LEVEL_WARN} "${*}"
 }
 
 motion.log.notice()
 {
-  motion.log.logto ${MOTION_LOG_LEVEL_NOTICE} "${*}"
+  bashio::log.notice ${*}
+  # motion.log.logto ${MOTION_LOG_LEVEL_NOTICE} "${*}"
 }
 
 motion.log.info()
 {
-  motion.log.logto ${MOTION_LOG_LEVEL_INFO} "${*}"
+  bashio::log.info ${*}
+  # motion.log.logto ${MOTION_LOG_LEVEL_INFO} "${*}"
 }
 
 motion.log.debug()
 {
-  motion.log.logto ${MOTION_LOG_LEVEL_DEBUG} "${*}"
+  bashio::log.debug ${*}
+  # motion.log.logto ${MOTION_LOG_LEVEL_DEBUG} "${*}"
 }
 
 motion.log.trace()
 {
-  motion.log.logto ${MOTION_LOG_LEVEL_TRACE} "${*}"
+  bashio::log.trace ${*}
+  # motion.log.logto ${MOTION_LOG_LEVEL_TRACE} "${*}"
 }
 
 motion.log.level()
@@ -377,7 +386,7 @@ motion.log.logto()
   fi
   if [ "${level:-0}" -le ${current:-9} ]; then
     local output=$(motion.log.message ${level} "${2:-}") 
-    echo "${output}" &>> ${MOTION_LOGTO:-/tmp/motion.log}
+    echo "${output}" &>> ${MOTION_LOGTO:-/dev/stderr}
     motion.log.mqtt ${level} "${output}"
   fi
 }

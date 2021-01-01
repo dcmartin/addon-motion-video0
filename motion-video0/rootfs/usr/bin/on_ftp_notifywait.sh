@@ -2,7 +2,7 @@
 
 setenv DEBUG
 
-if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >>& /tmp/motion.log
+if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >>& /dev/stderr
 
 if ($#argv == 2) then
   set file = "$argv[1]"

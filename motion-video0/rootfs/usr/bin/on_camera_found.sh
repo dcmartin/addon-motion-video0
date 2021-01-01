@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bashio
 
 source ${USRBIN:-/usr/bin}/motion-tools.sh
 #

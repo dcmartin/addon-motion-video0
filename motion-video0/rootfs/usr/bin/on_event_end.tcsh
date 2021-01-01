@@ -6,9 +6,10 @@
 
 if ( $?MOTION_LOG_LEVEL ) then
   if ( ${MOTION_LOG_LEVEL} == "debug" ) setenv DEBUG
+  if ( ${MOTION_LOG_LEVEL} == "trace" ) setenv DEBUG
 endif
 
-if ($?DEBUG) echo "$0:t $$ --" `date` "START ${*}" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ --" `date` "START ${*}" >> ${MOTION_LOGTO}
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -24,22 +25,22 @@ endif
 ##
 
 if ( $?MOTION_TARGET_DIR == 0 ) then
-  echo "$0:t $$ -- MOTION_TARGET_DIR unset; exiting" >> /tmp/motion.log
+  echo "$0:t $$ -- MOTION_TARGET_DIR unset; exiting" >> ${MOTION_LOGTO}
   exit 1
 endif
 
 if ($?MOTION_GROUP == 0 || $?MOTION_DEVICE == 0 ) then
-  echo "$0:t $$ -- MOTION_{GROUP,DEVICE} unset; exiting" >> /tmp/motion.log
+  echo "$0:t $$ -- MOTION_{GROUP,DEVICE} unset; exiting" >> ${MOTION_LOGTO}
   exit 1
 endif
 
 if ($?MOTION_MQTT_HOST == 0 || $?MOTION_MQTT_PORT == 0 || $?MOTION_MQTT_USERNAME == 0 || $?MOTION_MQTT_PASSWORD == 0) then
-  echo "$0:t $$ -- MOTION_MQTT_{HOST,PORT,USENAME,PASSWORD} unset; exiting" >> /tmp/motion.log
+  echo "$0:t $$ -- MOTION_MQTT_{HOST,PORT,USENAME,PASSWORD} unset; exiting" >> ${MOTION_LOGTO}
   exit 1
 endif
 
 if ( $?MOTION_FRAME_SELECT == 0 ) then
-  echo "$0:t $$ -- MOTION_FRAME_SELECT unset; using all" >> /tmp/motion.log
+  echo "$0:t $$ -- MOTION_FRAME_SELECT unset; using all" >> ${MOTION_LOGTO}
   set MOTION_FRAME_SELECT = 'all'
 endif
 
@@ -54,7 +55,7 @@ endif
 # %m - The month as a decimal number (range 01 to 12). 
 # %d - The day of the month as a decimal number (range 01 to 31).
 # %H - The hour as a decimal number using a 24-hour clock (range 00 to 23)
-# %M - The minute as a decimal number (range 00 to 59). >> /tmp/motion.log
+# %M - The minute as a decimal number (range 00 to 59). >> ${MOTION_LOGTO}
 # %S - The second as a decimal number (range 00 to 61). 
 #
 
@@ -78,20 +79,20 @@ set mqtt_topic = "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}"
 ##
 
 set dir = "${MOTION_TARGET_DIR}/${CN}"
-if ($?DEBUG) echo "$0:t $$ -- Processing $dir; camera: $CN; event: $EN; date: $NOW" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Processing $dir; camera: $CN; event: $EN; date: $NOW" >> ${MOTION_LOGTO}
 
 # find events (YYYYMMDDHHMMSS-##.json)
 set jsons = ( `echo "$dir"/??????????????"-${EN}".json` )
-if ($?DEBUG) echo "$0:t $$ -- Event JSONs found ($#jsons); camera: $CN; event: $EN; date: $NOW; jsons: ${jsons}" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Event JSONs found ($#jsons); camera: $CN; event: $EN; date: $NOW; jsons: ${jsons}" >> ${MOTION_LOGTO}
 if ( $#jsons == 0 ) then
-  echo "$0:t $$ -- Event JSON not found; exiting" >> /tmp/motion.log
+  echo "$0:t $$ -- Event JSON not found; exiting" >> ${MOTION_LOGTO}
   exit 1
 endif
 
 # find last event
 set event_json_file = $jsons[$#jsons]
 if (! -s "$event_json_file") then
-    echo "$0:t $$ -- JSON file $event_json_file not found; exiting" >> /tmp/motion.log
+    echo "$0:t $$ -- JSON file $event_json_file not found; exiting" >> ${MOTION_LOGTO}
     exit 1
 endif
 
@@ -100,9 +101,9 @@ set START = `jq -r '.start' $event_json_file`
 
 # find JPEGs for event
 set jpgs = ( `echo "${dir}"/*"-${EN}-"*.jpg` )
-if ($?DEBUG) echo "$0:t $$ -- Found $#jpgs JSON; camera: $CN; event: $EN; date: $NOW" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Found $#jpgs JSON; camera: $CN; event: $EN; date: $NOW" >> ${MOTION_LOGTO}
 if ($#jpgs == 0) then
-  echo "$0:t $$ -- ZERO JPEG; exiting" >> /tmp/motion.log
+  echo "$0:t $$ -- ZERO JPEG; exiting" >> ${MOTION_LOGTO}
   exit 1
 endif
 
@@ -115,16 +116,16 @@ set i = $#jpgs
 set frames = ()
 set elapsed = 0
 
-if ($?DEBUG) echo "$0:t $$ -- Testing images; start: $i; from: $#jpgs candidate JPEG" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Testing images; start: $i; from: $#jpgs candidate JPEG" >> ${MOTION_LOGTO}
 
 while ($i > 0) 
     set jpg = "$jpgs[$i]"
     set jsn = "$jpg:r.json"
 
-    if ($?DEBUG) echo "$0:t $$ -- $i; jpg=$jpg; jsn=$jsn" >> /tmp/motion.log
+    if ($?DEBUG) echo "$0:t $$ -- $i; jpg=$jpg; jsn=$jsn" >> ${MOTION_LOGTO}
 
     if ( ! -s "$jsn" ) then
-      if ($?DEBUG) echo "$0:t $$ -- $i; no JSON: $jsn; continuing.." >> /tmp/motion.log
+      if ($?DEBUG) echo "$0:t $$ -- $i; no JSON: $jsn; continuing.." >> ${MOTION_LOGTO}
       @ i--
       continue
     endif
@@ -134,7 +135,7 @@ while ($i > 0)
     @ seconds = $THIS - $START
     # test for breaking conditions
     if ( $seconds < 0 ) then
-      if ($?DEBUG) echo "$0:t $$ -- $i; too old: $THIS - $START = $seconds; breaking.." >> /tmp/motion.log
+      if ($?DEBUG) echo "$0:t $$ -- $i; too old: $THIS - $START = $seconds; breaking.." >> ${MOTION_LOGTO}
       break
     endif
 
@@ -145,18 +146,18 @@ while ($i > 0)
       if ($THIS > $LAST) set LAST = $THIS
     endif
     set frames = ( "$jpg:t:r" $frames )
-    if ($?DEBUG) echo "$0:t $$ -- $i; adding to images: $jpg:t:r" >> /tmp/motion.log
+    if ($?DEBUG) echo "$0:t $$ -- $i; adding to images: $jpg:t:r" >> ${MOTION_LOGTO}
     if ( $seconds > $elapsed ) set elapsed = $seconds
 
     # decrement to older
     @ i--
 end
 
-if ($?DEBUG) echo "$0:t $$ -- FOUND $#frames images; camera: $CN; event: $EN" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- FOUND $#frames images; camera: $CN; event: $EN" >> ${MOTION_LOGTO}
 
 # test
 if ( $#frames == 0 ) then
-  echo "$0:t $$ -- ZERO images; camera: $CN; event: $EN; exiting" >> /tmp/motion.log
+  echo "$0:t $$ -- ZERO images; camera: $CN; event: $EN; exiting" >> ${MOTION_LOGTO}
   exit 1
 endif
 
@@ -174,7 +175,7 @@ jq -c '.elapsed='"$elapsed"'|.end='${date}'|.timestamp.publish="'$timestamp'"|.d
 
 # test
 if ( ! -s "$event_json_file.$$" ) then
-  echo "$0:t $$ -- Event JSON update failed; JSON: $event_json_file" >> /tmp/motion.log
+  echo "$0:t $$ -- Event JSON update failed; JSON: $event_json_file" >> ${MOTION_LOGTO}
   exit 1
 endif
 mv -f "$event_json_file.$$" "$event_json_file"
@@ -189,17 +190,17 @@ foreach f ( $frames )
 
   # get image information
   if (-e "$jpg:r.json") then
-    if ($?DEBUG) echo "$0:t $$ -- Found JSON $jpg:r.json" >> /tmp/motion.log
+    if ($?DEBUG) echo "$0:t $$ -- Found JSON $jpg:r.json" >> ${MOTION_LOGTO}
     set jpgs = ( $jpgs "$jpg" )
   else
-    if ($?DEBUG) echo "$0:t $$ -- Failed to find JSON $jpg:r.json; skipped" >> /tmp/motion.log
+    if ($?DEBUG) echo "$0:t $$ -- Failed to find JSON $jpg:r.json; skipped" >> ${MOTION_LOGTO}
   endif
 end
 
-if ($?DEBUG) echo "$0:t $$ -- Found $#jpgs images from $#frames candidates" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Found $#jpgs images from $#frames candidates" >> ${MOTION_LOGTO}
 
 if ($#jpgs == 0) then
-  echo "$0:t $$ -- ZERO images; camera: $CN; event: $EN; exiting" >> /tmp/motion.log
+  echo "$0:t $$ -- ZERO images; camera: $CN; event: $EN; exiting" >> ${MOTION_LOGTO}
   exit 1
 endif
 
@@ -226,15 +227,15 @@ mkdir -p $tmpdir
 ## AVERAGE image
 ##
 
-if ($?DEBUG) echo "$0:t $$ -- Calculating average from $#jpgs JPEGS" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Calculating average from $#jpgs JPEGS" >> ${MOTION_LOGTO}
 
 set average = "$tmpdir/$event_json_file:t:r"'-average.jpg'
 if ($#jpgs > 1) then
   convert $jpgs -average $average >&! /tmp/$$.out
-  if ($?DEBUG) echo "$0:t $$ -- Calculated average image: $average" >> /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Calculated average image: $average" >> ${MOTION_LOGTO}
   if ( ! -s "$average") then
     set out = `cat "/tmp/$$.out"`
-    echo "$0:t $$ -- Failed to calculate average image from $#jpgs JPEGS" `cat $out` >> /tmp/motion.log
+    echo "$0:t $$ -- Failed to calculate average image from $#jpgs JPEGS" `cat $out` >> ${MOTION_LOGTO}
     rm -f "/tmp/$$.out" $average
     exit 1
   endif
@@ -246,7 +247,7 @@ endif
 ## DIFFS
 ##
 
-if ($?DEBUG) echo "$0:t $$ -- Calculating difference from $#jpgs JPEGS" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Calculating difference from $#jpgs JPEGS" >> ${MOTION_LOGTO}
 
 set i = 1
 while ( $i <= $#jpgs )
@@ -275,7 +276,7 @@ end
 if ($#ps) @ avgdiff = $totaldiff / $#ps
 if ($#ps) @ avgsize = $totalsize / $#ps
 
-if ($?DEBUG) echo "$0:t $$ -- Calculated difference: $avgdiff; avgsize: $avgsize; biggest: $biggest; maxsize: $maxsize; maxdiff: $maxdiff" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Calculated difference: $avgdiff; avgsize: $avgsize; biggest: $biggest; maxsize: $maxsize; maxdiff: $maxdiff" >> ${MOTION_LOGTO}
 
 ##
 ## SELECT image to represent event
@@ -283,7 +284,7 @@ if ($?DEBUG) echo "$0:t $$ -- Calculated difference: $avgdiff; avgsize: $avgsize
 
 set post_pictures = `jq -r '.motion.post_pictures' "${MOTION_JSON_FILE}"`
 
-if ($?DEBUG) echo "$0:t $$ -- Finding $post_pictures image" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Finding $post_pictures image" >> ${MOTION_LOGTO}
 
 set IF = ()
 switch ( "$post_pictures" )
@@ -308,11 +309,11 @@ switch ( "$post_pictures" )
 endsw
 
 if ( $#IF == 0 ) then
-  if ($?DEBUG) echo "$0:t $$ -- no image selected; defaulting to last: $#jpgs" >> /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- no image selected; defaulting to last: $#jpgs" >> ${MOTION_LOGTO}
   set IF = "$jpgs[$#jpgs]"
 endif
 
-if ($?DEBUG) echo "$0:t $$ -- Selected $post_pictures image: $IF" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Selected $post_pictures image: $IF" >> ${MOTION_LOGTO}
 
 ##
 ## add image to event
@@ -330,15 +331,15 @@ rm -f ${base64_encoded_file}
 ## BLEND
 ##
 
-if ($?DEBUG) echo "$0:t $$ -- Calculating blend from $#jpgs JPEGS" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Calculating blend from $#jpgs JPEGS" >> ${MOTION_LOGTO}
 
 set blend = "$tmpdir/$event_json_file:t:r"'-blend.jpg'
 convert $jpgs -compose blend -define 'compose:args=50' -alpha on -composite $blend
 if ( ! -s "$blend") then
-  if ($?DEBUG) echo "$0:t $$ -- Failed to convert $#jpgs into a blend: $blend" >> /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Failed to convert $#jpgs into a blend: $blend" >> ${MOTION_LOGTO}
 endif
 
-if ($?DEBUG) echo "$0:t $$ -- Calculated blend: $avgdiff; avgsize: $avgsize; maxsize: $maxsize" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Calculated blend: $avgdiff; avgsize: $avgsize; maxsize: $maxsize" >> ${MOTION_LOGTO}
 
 ##
 ## KEY images
@@ -346,7 +347,7 @@ if ($?DEBUG) echo "$0:t $$ -- Calculated blend: $avgdiff; avgsize: $avgsize; max
 
 if (${MOTION_FRAME_SELECT} == 'key') then
   # find key frames
-  if ($?DEBUG) echo "$0:t $$ -- Calculating key images from $#jpgs JPEGS" >> /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Calculating key images from $#jpgs JPEGS" >> ${MOTION_LOGTO}
   # start with nothing
   set kjpgs = ()
   set kdiffs = ()
@@ -354,19 +355,19 @@ if (${MOTION_FRAME_SELECT} == 'key') then
   while ( $i <= $#jpgs )
     # keep track of jpgs w/ change > average
     if ($ps[$i] > $avgdiff) then
-      if ($?DEBUG) echo "$0:t $$ -- KEY ($i) SIZE ($ps[$i]) - $jpgs[$i] $diffs[$i]" >> /tmp/motion.log
+      if ($?DEBUG) echo "$0:t $$ -- KEY ($i) SIZE ($ps[$i]) - $jpgs[$i] $diffs[$i]" >> ${MOTION_LOGTO}
       set kjpgs = ( $kjpgs $jpgs[$i] )
       set kdiffs = ( $kdiffs $diffs[$i] )
     endif
     @ i++
   end
   # key frames
-  if ($?DEBUG) echo "$0:t $$ -- Using key images $#kjpgs from $#jpgs" >> /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Using key images $#kjpgs from $#jpgs" >> ${MOTION_LOGTO}
   set srcs = ( $kjpgs )
   set masks = ( $kdiffs )
 else
   # all frames
-  if ($?DEBUG) echo "$0:t $$ -- Using ALL images" >> /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Using ALL images" >> ${MOTION_LOGTO}
   set srcs = ( $jpgs )
   set masks = ( $diffs )
 endif
@@ -375,7 +376,7 @@ endif
 ## COMPOSITE 
 ##
 
-if ($?DEBUG) echo "$0:t $$ -- Calculating composite from $#srcs JPEGS" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Calculating composite from $#srcs JPEGS" >> ${MOTION_LOGTO}
 
 # start with average
 set composite = "$tmpdir/$event_json_file:t:r"'-composite.jpg'
@@ -385,7 +386,7 @@ cp -f "$average" "$composite"
 @ i = 1
 while ( $i <= $#srcs )
   set c = $composite:r.$i.jpg
-  if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} ${c} from $srcs[$i] and $masks[$i]" >> /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} ${c} from $srcs[$i] and $masks[$i]" >> ${MOTION_LOGTO}
   convert "$composite" "$srcs[$i]" "$masks[$i]" -composite "$c"
   mv -f $c $composite
   @ i++
@@ -393,22 +394,22 @@ end
 
 # success or failure
 if (! -s "$composite") then
-  echo "$0:t $$ -- Failed to convert $#jpgs into a composite: $composite; exiting" >> /tmp/motion.log
+  echo "$0:t $$ -- Failed to convert $#jpgs into a composite: $composite; exiting" >> ${MOTION_LOGTO}
   exit 1
 endif
 
-if ($?DEBUG) echo "$0:t $$ -- Calculated composite: $composite" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Calculated composite: $composite" >> ${MOTION_LOGTO}
 
 ##
 ## ANIMATE (all images)
 ##
 
-if ($?DEBUG) echo "$0:t $$ -- Calculating animation and mask from $#jpgs JPEGS" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Calculating animation and mask from $#jpgs JPEGS" >> ${MOTION_LOGTO}
 
 ## find frames per second for this camera
 set fps = ( `jq '.cameras[]|select(.name=="'"$CN"'").framerate' "${MOTION_JSON_FILE}"` )
 if ($#fps == 0) then
-  if ($?DEBUG) echo "$0:t $$ -- Warning!  Did not find framerate for camera $CN in ${MOTION_JSON_FILE}" >> /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Warning!  Did not find framerate for camera $CN in ${MOTION_JSON_FILE}" >> ${MOTION_LOGTO}
   set fps = `echo "$#frames / $elapsed" | bc -l`
   set rem = `echo $fps:e | sed "s/\(.\).*/\1/"`
   if ($rem >= 5) then
@@ -421,7 +422,7 @@ endif
 set delay = `echo "100.0 / $fps" | bc -l`
 set delay = $delay:r
 
-if ($?DEBUG) echo "$0:t $$ -- Animation delay: $delay ticks; camera: $CN; fps: $fps" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Animation delay: $delay ticks; camera: $CN; fps: $fps" >> ${MOTION_LOGTO}
 
 ## animated GIF
 set gif = "$tmpdir/$event_json_file:t:r.gif"
@@ -433,65 +434,65 @@ pushd "$dir" >& /dev/null
 convert -loop 0 -delay $delay $diffs $mask
 popd >& /dev/null
 
-if ($?DEBUG) echo "$0:t $$ -- Calculated gif: $gif; mask: $mask" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Calculated gif: $gif; mask: $mask" >> ${MOTION_LOGTO}
 
 ##
 ## MQTT
 ##
 
-if ($?DEBUG) echo "$0:t $$ -- Publishing to MQTT; host: ${MOTION_MQTT_HOST}; group: ${MOTION_GROUP}; device: ${MOTION_DEVICE}; camera: ${CN}" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Publishing to MQTT; host: ${MOTION_MQTT_HOST}; group: ${MOTION_GROUP}; device: ${MOTION_DEVICE}; camera: ${CN}" >> ${MOTION_LOGTO}
 
 # event image
 set topic = "${mqtt_topic}/image/end"
 set file = "$IF" 
 mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> ${MOTION_LOGTO}
 
 #
 set topic = "$mqtt_topic/image-average"
 set file = "$average" 
 mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> ${MOTION_LOGTO}
 
 #
 set topic = "$mqtt_topic/image-blend"
 set file = "$blend" 
 mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> ${MOTION_LOGTO}
 
 # composite
 set topic = "$mqtt_topic/image-composite"
 set file = "$composite" 
 mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> ${MOTION_LOGTO}
 
 # animated
 set topic = "$mqtt_topic/image-animated"
 set file = "$gif" 
 mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> ${MOTION_LOGTO}
 
 # animated mask
 set topic = "$mqtt_topic/image-animated-mask"
 set file = $mask
 mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> ${MOTION_LOGTO}
 
 ## PUBLISH EVENT
 set topic = "${mqtt_topic}/event/end"
 set file = "$event_json_file" 
 mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> ${MOTION_LOGTO}
 
 
 ##
 ## ALL DONE
 ##
 
-if ($?DEBUG) echo "$0:t $$ -- Cleaning .." >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Cleaning .." >> ${MOTION_LOGTO}
 
 if ($?jsons) rm -f "$jsons"
 if ($?jpgs) rm -f "$jpgs"
 if ($?tmpdir) rm -fr $tmpdir
 
-if ($?DEBUG) echo "$0:t $$ --" `date` "FINISH ${*}" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ --" `date` "FINISH ${*}" >> ${MOTION_LOGTO}

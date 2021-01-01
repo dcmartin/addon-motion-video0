@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bashio
 
 source ${USRBIN:-/usr/bin}/motion-tools.sh
 
@@ -550,24 +550,34 @@ motion_event_end()
           result='false'
         fi
       elif [ ${njpeg:-0} > 0 ]; then
-        motion.log.debug "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
-  
+        local mmh=$(echo $(motion.config.mqtt) | jq -r '.host')
+        motion.log.debug "${FUNCNAME[0]}: MQTT host: ${mmh}"
+
+        local mmp=$(echo $(motion.config.mqtt) | jq -r '.port')
+        motion.log.debug "${FUNCNAME[0]}: MQTT port: ${mmp}"
+
+        local mmu=$(echo $(motion.config.mqtt) | jq -r '.username')
+        motion.log.debug "${FUNCNAME[0]}: MQTT username: ${mmu}"
+
+        local mmx=$(echo $(motion.config.mqtt) | jq -r '.password')
+        motion.log.debug "${FUNCNAME[0]}: MQTT password: ${mmx}"
+
         # process multi-image event with legacy code
-        export \
-          MOTION_GROUP=$(motion.config.group) \
+        motion.log.debug "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
+        MOTION_GROUP=$(motion.config.group) \
           MOTION_DEVICE=$(motion.config.device) \
           MOTION_JSON_FILE=$(motion.config.file) \
           MOTION_TARGET_DIR=$(motion.config.target_dir) \
-          MOTION_MQTT_HOST=$(echo $(motion.config.mqtt) | jq -r '.host') \
-          MOTION_MQTT_PORT=$(echo $(motion.config.mqtt) | jq -r '.port') \
-          MOTION_MQTT_USERNAME=$(echo $(motion.config.mqtt) | jq -r '.username') \
-          MOTION_MQTT_PASSWORD=$(echo $(motion.config.mqtt) | jq -r '.password') \
-          MOTION_LOG_LEVEL=${MOTION_LOG_LEVEL} \
-          MOTION_LOGTO=${MOTION_LOGTO} \
+          MOTION_MQTT_HOST=${mmh}
+          MOTION_MQTT_PORT=${mmp}
+          MOTION_MQTT_USERNAME=${mmu}
+          MOTION_MQTT_PASSWORD=${mmx}
+          MOTION_LOG_LEVEL=${MOTION_LOG_LEVEL:-debug} \
+          MOTION_LOGTO=${MOTION_LOGTO:-/dev/stderr} \
           MOTION_FRAME_SELECT='key' \
-          && \
           /usr/bin/on_event_end.tcsh ${*}
-        result='{"legacy":$?}'
+        result='{"legacy":'$?'}'
+        motion.log.debug "${FUNCNAME[0]} legacy result: ${result:-null}"
       else
         motion.log.error "${FUNCNAME[0]} FAILURE: no images; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
       fi
