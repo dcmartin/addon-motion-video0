@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bashio
+#!/bin/bash
 
 source ${USRBIN:-/usr/bin}/motion-tools.sh
 
@@ -564,18 +564,19 @@ motion_event_end()
 
         # process multi-image event with legacy code
         motion.log.debug "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
-        MOTION_GROUP=$(motion.config.group) \
+        export MOTION_GROUP=$(motion.config.group) \
           MOTION_DEVICE=$(motion.config.device) \
           MOTION_JSON_FILE=$(motion.config.file) \
           MOTION_TARGET_DIR=$(motion.config.target_dir) \
-          MOTION_MQTT_HOST=${mmh}
-          MOTION_MQTT_PORT=${mmp}
-          MOTION_MQTT_USERNAME=${mmu}
-          MOTION_MQTT_PASSWORD=${mmx}
+          MOTION_MQTT_HOST=${mmh} \
+          MOTION_MQTT_PORT=${mmp} \
+          MOTION_MQTT_USERNAME=${mmu} \
+          MOTION_MQTT_PASSWORD=${mmx} \
           MOTION_LOG_LEVEL=${MOTION_LOG_LEVEL:-debug} \
-          MOTION_LOGTO=${MOTION_LOGTO:-/dev/stderr} \
+          MOTION_LOGTO=${MOTION_LOGTO:-/tmp/motion.log} \
           MOTION_FRAME_SELECT='key' \
-          /usr/bin/on_event_end.tcsh ${*}
+          && \
+          /usr/bin/on_event_end.tcsh ${*} &>> ${MOTION_LOGTO:-/tmp/motion.log}
         result='{"legacy":'$?'}'
         motion.log.debug "${FUNCNAME[0]} legacy result: ${result:-null}"
       else

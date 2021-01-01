@@ -32,7 +32,7 @@ if [ -z "${file:-}" ] || [ ! -s "${file}" ]; then
   echo "Cache-Control: no-cache"
   echo "Cache-Control: max-age=30"
   echo ""
-  echo '{"request":"'${id:-}'","camera":"'${camera:-}'","error":"not found"}'
+  echo '{"id":"'${id:-}'","camera":"'${camera:-}'","error":"not found"}'
 fi
 
 if [ ! -z "${file:-}" ]; then rm -f "${file}"; fi

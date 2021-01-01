@@ -1,7 +1,9 @@
 #!/usr/bin/with-contenv bashio
 
 ## initiate logging
-export MOTION_LOG_LEVEL="${1}"
+export MOTION_LOG_LEVEL="${1:-debug}"
+export MOTION_LOGTO=${MOTION_LOGTO:-/tmp/motion.log}
+
 source ${USRBIN:-/usr/bin}/motion-tools.sh
 
 ###
@@ -11,11 +13,11 @@ source ${USRBIN:-/usr/bin}/motion-tools.sh
 ## motion command
 MOTION_CMD=$(command -v motion)
 if [ ! -s "${MOTION_CMD}" ]; then
-  motion.log.error "Motion not installed; command: ${MOTION_CMD}"
+  bashio::log.error "Motion not installed; command: ${MOTION_CMD}"
   exit 1
 fi
 
-motion.log.notice "Reseting configuration to default: ${MOTION_CONF}"
+bashio::log.notice "Reseting configuration to default: ${MOTION_CONF}"
 cp -f ${MOTION_CONF%%.*}.default ${MOTION_CONF}
 
 ## defaults
@@ -25,19 +27,19 @@ if [ -z "${MOTION_STREAM_PORT:-}" ]; then MOTION_STREAM_PORT=8090; fi
 
 ## apache
 if [ ! -s "${MOTION_APACHE_CONF}" ]; then
-  motion.log.error "Missing Apache configuration"
+  bashio::log.error "Missing Apache configuration"
   exit 1
 fi
 if [ -z "${MOTION_APACHE_HOST:-}" ]; then
-  motion.log.error "Missing Apache ServerName"
+  bashio::log.error "Missing Apache ServerName"
   exit 1
 fi
 if [ -z "${MOTION_APACHE_HOST:-}" ]; then
-  motion.log.error "Missing Apache ServerAdmin"
+  bashio::log.error "Missing Apache ServerAdmin"
   exit 1
 fi
 if [ -z "${MOTION_APACHE_HTDOCS:-}" ]; then
-  motion.log.error "Missing Apache HTML documents directory"
+  bashio::log.error "Missing Apache HTML documents directory"
   exit 1
 fi
 
@@ -59,7 +61,7 @@ start_apache_background()
 
 start_apache()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local foreground=${1}; shift
 
@@ -98,18 +100,18 @@ start_apache()
   mkdir -p /run/apache2
 
   # start HTTP daemon
-  motion.log.info "Starting Apache: ${conf} ${host} ${port}"
+  bashio::log.info "Starting Apache: ${conf} ${host} ${port}"
 
   if [ "${foreground:-false}" = 'true' ]; then
-    MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
+    MOTION_JSON_FILE=$(motion.config.file) httpd -E ${MOTION_LOGTO} -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
   else
-    MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}"
+    MOTION_JSON_FILE=$(motion.config.file) httpd -E ${MOTION_LOGTO} -e debug -f "${MOTION_APACHE_CONF}"
   fi
 }
 
 process_config_camera_ftpd()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -119,7 +121,7 @@ process_config_camera_ftpd()
 
 process_config_camera_mjpeg()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -129,7 +131,7 @@ process_config_camera_mjpeg()
 
 process_config_camera_http()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -139,7 +141,7 @@ process_config_camera_http()
 
 process_config_camera_v4l2()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json='null'
@@ -151,35 +153,35 @@ process_config_camera_v4l2()
   json=$(echo "${json}" | jq '.v4l2_palette='${value})
   sed -i "s/^v4l2_palette\s[0-9]\+/v4l2_palette ${value}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"v4l2_palette":'"${value}"
-  motion.log.debug "Set v4l2_palette to ${value}"
+  bashio::log.debug "Set v4l2_palette to ${value}"
   
   # set brightness
   value=$(echo "${config:-null}" | jq -r ".v4l2_brightness")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=0; fi
   sed -i "s/brightness=[0-9]\+/brightness=${value}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"brightness":'"${value}"
-  motion.log.debug "Set brightness to ${value}"
+  bashio::log.debug "Set brightness to ${value}"
   
   # set contrast
   value=$(jq -r ".v4l2_contrast" "${CONFIG_PATH}")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=0; fi
   sed -i "s/contrast=[0-9]\+/contrast=${value}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"contrast":'"${value}"
-  motion.log.debug "Set contrast to ${value}"
+  bashio::log.debug "Set contrast to ${value}"
   
   # set saturation
   value=$(jq -r ".v4l2_saturation" "${CONFIG_PATH}")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=0; fi
   sed -i "s/saturation=[0-9]\+/saturation=${value}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"saturation":'"${value}"
-  motion.log.debug "Set saturation to ${value}"
+  bashio::log.debug "Set saturation to ${value}"
   
   # set hue
   value=$(jq -r ".v4l2_hue" "${CONFIG_PATH}")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=0; fi
   sed -i "s/hue=[0-9]\+/hue=${value}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"hue":'"${value}"
-  motion.log.debug "Set hue to ${value}"
+  bashio::log.debug "Set hue to ${value}"
 
   echo "${json:-null}"
 }
@@ -187,7 +189,7 @@ process_config_camera_v4l2()
 ## cameras
 process_config_cameras()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -198,7 +200,7 @@ process_config_cameras()
 ## defaults
 process_config_defaults()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -209,7 +211,7 @@ process_config_defaults()
 ## mqtt
 process_config_mqtt()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local result=
@@ -219,25 +221,25 @@ process_config_mqtt()
   # local json server (hassio addon)
   value=$(echo "${config}" | jq -r ".host")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value="core-mosquitto"; fi
-  motion.log.debug "Using MQTT host: ${value}"
+  bashio::log.debug "Using MQTT host: ${value}"
   json='{"host":"'"${value}"'"'
 
   # username
   value=$(echo "${config}" | jq -r ".username")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=""; fi
-  motion.log.debug "Using MQTT username: ${value}"
+  bashio::log.debug "Using MQTT username: ${value}"
   json="${json}"',"username":"'"${value}"'"'
 
   # password
   value=$(echo "${config}" | jq -r ".password")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=""; fi
-  motion.log.debug "Using MQTT password: ${value}"
+  bashio::log.debug "Using MQTT password: ${value}"
   json="${json}"',"password":"'"${value}"'"'
 
   # port
   value=$(echo "${config}" | jq -r ".port")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=1883; fi
-  motion.log.debug "Using MQTT port: ${value}"
+  bashio::log.debug "Using MQTT port: ${value}"
   json="${json}"',"port":'"${value}"'}'
 
   echo "${json:-null}"
@@ -246,7 +248,7 @@ process_config_mqtt()
 ## process configuration 
 process_config_system()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local timestamp=$(date -u +%FT%TZ)
   local ipaddr=$(ip addr | egrep -A4 UP | egrep 'inet ' | egrep -v 'scope host lo' | egrep -v 'scope global docker' | awk '{ print $2 }')
@@ -258,7 +260,7 @@ process_config_system()
 ## process configuration 
 process_config_motion()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local path=${1}
   local json
@@ -273,7 +275,7 @@ process_config_motion()
 
 start_motion()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local path=${1}
   local json
@@ -301,30 +303,30 @@ JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'${ipaddr}'","hostname":"'"$
 VALUE=$(jq -r ".device" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
   VALUE="$(hostname -s)"
-  motion.log.warn "device unspecifieid; setting device: ${VALUE}"
+  bashio::log.warn "device unspecifieid; setting device: ${VALUE}"
 fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
-motion.log.info "MOTION_DEVICE: ${VALUE}"
+bashio::log.info "MOTION_DEVICE: ${VALUE}"
 MOTION_DEVICE="${VALUE}"
 
 # device group
 VALUE=$(jq -r ".group" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
   VALUE="motion"
-  motion.log.warn "group unspecifieid; setting group: ${VALUE}"
+  bashio::log.warn "group unspecifieid; setting group: ${VALUE}"
 fi
 JSON="${JSON}"',"group":"'"${VALUE}"'"'
-motion.log.info "MOTION_GROUP: ${VALUE}"
+bashio::log.info "MOTION_GROUP: ${VALUE}"
 MOTION_GROUP="${VALUE}"
 
 # client
 VALUE=$(jq -r ".client" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
   VALUE="+"
-  motion.log.warn "client unspecifieid; setting client: ${VALUE}"
+  bashio::log.warn "client unspecifieid; setting client: ${VALUE}"
 fi
 JSON="${JSON}"',"client":"'"${VALUE}"'"'
-motion.log.info "MOTION_CLIENT: ${VALUE}"
+bashio::log.info "MOTION_CLIENT: ${VALUE}"
 MOTION_CLIENT="${VALUE}"
 
 ## time zone
@@ -332,40 +334,40 @@ VALUE=$(jq -r ".timezone" "${CONFIG_PATH}")
 # Set the correct timezone
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
   VALUE="GMT"
-  motion.log.warn "timezone unspecified; defaulting to ${VALUE}"
+  bashio::log.warn "timezone unspecified; defaulting to ${VALUE}"
 else
-  motion.log.info "TIMEZONE: ${VALUE}"
+  bashio::log.info "TIMEZONE: ${VALUE}"
 fi
 if [ -s "/usr/share/zoneinfo/${VALUE}" ]; then
   cp /usr/share/zoneinfo/${VALUE} /etc/localtime
   echo "${VALUE}" > /etc/timezone
 else
-  motion.log.error "No known timezone: ${VALUE}"
+  bashio::log.error "No known timezone: ${VALUE}"
 fi
 JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 
 # set unit_system for events
 VALUE=$(jq -r '.unit_system' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
-motion.log.info "Set unit_system to ${VALUE}"
+bashio::log.info "Set unit_system to ${VALUE}"
 JSON="${JSON}"',"unit_system":"'"${VALUE}"'"'
 
 # set latitude for events
 VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-motion.log.info "Set latitude to ${VALUE}"
+bashio::log.info "Set latitude to ${VALUE}"
 JSON="${JSON}"',"latitude":'"${VALUE}"
 
 # set longitude for events
 VALUE=$(jq -r '.longitude' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-motion.log.info "Set longitude to ${VALUE}"
+bashio::log.info "Set longitude to ${VALUE}"
 JSON="${JSON}"',"longitude":'"${VALUE}"
 
 # set elevation for events
 VALUE=$(jq -r '.elevation' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.info "Set elevation to ${VALUE}"
+bashio::log.info "Set elevation to ${VALUE}"
 JSON="${JSON}"',"elevation":'"${VALUE}"
 
 ##
@@ -375,22 +377,22 @@ JSON="${JSON}"',"elevation":'"${VALUE}"
 # local MQTT server (hassio addon)
 VALUE=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="mqtt"; fi
-motion.log.info "Using MQTT at ${VALUE}"
+bashio::log.info "Using MQTT at ${VALUE}"
 MQTT='{"host":"'"${VALUE}"'"'
 # username
 VALUE=$(jq -r ".mqtt.username" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-motion.log.info "Using MQTT username: ${VALUE}"
+bashio::log.info "Using MQTT username: ${VALUE}"
 MQTT="${MQTT}"',"username":"'"${VALUE}"'"'
 # password
 VALUE=$(jq -r ".mqtt.password" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-motion.log.info "Using MQTT password: ${VALUE}"
+bashio::log.info "Using MQTT password: ${VALUE}"
 MQTT="${MQTT}"',"password":"'"${VALUE}"'"'
 # port
 VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
-motion.log.info "Using MQTT port: ${VALUE}"
+bashio::log.info "Using MQTT port: ${VALUE}"
 MQTT="${MQTT}"',"port":'"${VALUE}"'}'
 
 ## finish
@@ -403,7 +405,7 @@ JSON="${JSON}"',"mqtt":'"${MQTT}"
 if [ -n "${WATSON:-}" ]; then
   JSON="${JSON}"',"watson":'"${WATSON}"
 else
-  motion.log.debug "Watson Visual Recognition not specified"
+  bashio::log.debug "Watson Visual Recognition not specified"
   JSON="${JSON}"',"watson":null'
 fi
 
@@ -414,7 +416,7 @@ fi
 if [ -n "${DIGITS:-}" ]; then
   JSON="${JSON}"',"digits":'"${DIGITS}"
 else
-  motion.log.debug "DIGITS not specified"
+  bashio::log.debug "DIGITS not specified"
   JSON="${JSON}"',"digits":null'
 fi
 
@@ -422,7 +424,7 @@ fi
 ### MOTION
 ###
 
-motion.log.debug "+++ MOTION"
+bashio::log.debug "+++ MOTION"
 
 MOTION='{'
 
@@ -431,7 +433,7 @@ VALUE=$(jq -r ".log_motion_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="ALL"; fi
 sed -i "s|^log_type .*|log_type ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"'"log_type":"'"${VALUE}"'"'
-motion.log.debug "Set motion.log_type to ${VALUE}"
+bashio::log.debug "Set motion.log_type to ${VALUE}"
 
 # set log_level
 VALUE=$(jq -r ".log_motion_level" "${CONFIG_PATH}")
@@ -466,55 +468,56 @@ case ${VALUE} in
 esac
 sed -i "s/^log_level .*/log_level ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_level":'"${VALUE}"
-motion.log.debug "Set motion.log_level to ${VALUE}"
+bashio::log.debug "Set motion.log_level to ${VALUE}"
 
 # set log_file
 VALUE=$(jq -r ".log_file" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/tmp/motion.log"; fi
 sed -i "s|^log_file .*|log_file ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_file":"'"${VALUE}"'"'
-motion.log.debug "Set log_file to ${VALUE}"
+bashio::log.debug "Set log_file to ${VALUE}"
+export MOTION_LOGTO=${VALUE}
 
 # shared directory for results (not images and JSON)
 VALUE=$(jq -r ".share_dir" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/${MOTION_GROUP}"; fi
-motion.log.debug "Set share_dir to ${VALUE}"
+bashio::log.debug "Set share_dir to ${VALUE}"
 JSON="${JSON}"',"share_dir":"'"${VALUE}"'"'
-MOTION_SHARE_DIR="${VALUE}"
+export MOTION_SHARE_DIR="${VALUE}"
 
 # base target_dir
 VALUE=$(jq -r ".default.target_dir" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_APACHE_HTDOCS}/cameras"; fi
-motion.log.debug "Set target_dir to ${VALUE}"
+bashio::log.debug "Set target_dir to ${VALUE}"
 sed -i "s|^target_dir .*|target_dir ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"',"target_dir":"'"${VALUE}"'"'
-MOTION_TARGET_DIR="${VALUE}"
+export MOTION_TARGET_DIR="${VALUE}"
 
 # set auto_brightness
 VALUE=$(jq -r ".default.auto_brightness" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 sed -i "s/^auto_brightness .*/auto_brightness ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"auto_brightness":"'"${VALUE}"'"'
-motion.log.debug "Set auto_brightness to ${VALUE}"
+bashio::log.debug "Set auto_brightness to ${VALUE}"
 
 # set locate_motion_mode
 VALUE=$(jq -r ".default.locate_motion_mode" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="off"; fi
 sed -i "s/^locate_motion_mode .*/locate_motion_mode ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_mode":"'"${VALUE}"'"'
-motion.log.debug "Set locate_motion_mode to ${VALUE}"
+bashio::log.debug "Set locate_motion_mode to ${VALUE}"
 
 # set locate_motion_style (box, redbox, cross, redcross)
 VALUE=$(jq -r ".default.locate_motion_style" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="box"; fi
 sed -i "s/^locate_motion_style .*/locate_motion_style ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_style":"'"${VALUE}"'"'
-motion.log.debug "Set locate_motion_style to ${VALUE}"
+bashio::log.debug "Set locate_motion_style to ${VALUE}"
 
 # set post_pictures; enumerated [on,center,first,last,best,most]
 VALUE=$(jq -r '.default.post_pictures' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
-motion.log.debug "Set post_pictures to ${VALUE}"
+bashio::log.debug "Set post_pictures to ${VALUE}"
 MOTION="${MOTION}"',"post_pictures":"'"${VALUE}"'"'
 export MOTION_POST_PICTURES="${VALUE}"
 
@@ -522,15 +525,15 @@ export MOTION_POST_PICTURES="${VALUE}"
 case "${MOTION_POST_PICTURES}" in
   'on'|'center'|'most')
     SPEC="on"
-    motion.log.debug "process all images; picture_output: ${SPEC}"
+    bashio::log.debug "process all images; picture_output: ${SPEC}"
   ;;
   'best'|'first')
     SPEC="${MOTION_POST_PICTURES}"
-    motion.log.debug "process one image; picture_output: ${SPEC}"
+    bashio::log.debug "process one image; picture_output: ${SPEC}"
   ;;
   'off')
     SPEC="off"
-    motion.log.debug "process no image; picture_output: ${SPEC}"
+    bashio::log.debug "process no image; picture_output: ${SPEC}"
   ;;
 esac
 
@@ -538,52 +541,52 @@ esac
 VALUE=$(jq -r ".default.picture_output" "${CONFIG_PATH}")
 if [ "${VALUE:-}" != 'null' ] && [ ! -z "${VALUE:-}" ]; then
   if [ "${VALUE}" != "${SPEC}" ]; then
-    motion.log.notice "picture_output; specified ${VALUE} does not match expected: ${SPEC}"
+    bashio::log.notice "picture_output; specified ${VALUE} does not match expected: ${SPEC}"
   else
-    motion.log.debug "picture_output; specified ${VALUE} matches expected: ${SPEC}"
+    bashio::log.debug "picture_output; specified ${VALUE} matches expected: ${SPEC}"
   fi
 else
   VALUE="${SPEC}"
-  motion.log.debug "picture_output; unspecified; using: ${VALUE}"
+  bashio::log.debug "picture_output; unspecified; using: ${VALUE}"
 fi
 sed -i "s/^picture_output .*/picture_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_output":"'"${VALUE}"'"'
-motion.log.info "Set picture_output to ${VALUE}"
+bashio::log.info "Set picture_output to ${VALUE}"
 PICTURE_OUTPUT=${VALUE}
 
 # set movie_output (on, off)
 if [ "${PICTURE_OUTPUT:-}" = 'best' ] || [ "${PICTURE_OUTPUT:-}" = 'first' ]; then
-  motion.log.notice "Picture output: ${PICTURE_OUTPUT}; setting movie_output: on"
+  bashio::log.notice "Picture output: ${PICTURE_OUTPUT}; setting movie_output: on"
   VALUE='on'
 else
   VALUE=$(jq -r '.default.movie_output' "${CONFIG_PATH}")
   if [ "${VALUE:-null}" = 'null' ]; then 
-    motion.log.debug "movie_output unspecified; defaulting: off"
+    bashio::log.debug "movie_output unspecified; defaulting: off"
     VALUE="off"
   else
     case ${VALUE} in
       '3gp')
-        motion.log.notice "movie_output: video type ${VALUE}; ensure camera type: ftpd"
+        bashio::log.notice "movie_output: video type ${VALUE}; ensure camera type: ftpd"
         MOTION_VIDEO_CODEC="${VALUE}"
         VALUE='off'
       ;;
       'on'|'mp4')
-        motion.log.debug "movie_output: supported codec: ${VALUE}; - MPEG-4 Part 14 H264 encoding"
+        bashio::log.debug "movie_output: supported codec: ${VALUE}; - MPEG-4 Part 14 H264 encoding"
         MOTION_VIDEO_CODEC="${VALUE}"
         VALUE='on'
       ;;
       'mpeg4'|'swf'|'flv'|'ffv1'|'mov'|'mkv'|'hevc')
-        motion.log.warn "movie_output: unsupported option: ${VALUE}"
+        bashio::log.warn "movie_output: unsupported option: ${VALUE}"
         MOTION_VIDEO_CODEC="${VALUE}"
         VALUE='on'
       ;;
       'off')
-        motion.log.debug "movie_output: off defined"
+        bashio::log.debug "movie_output: off defined"
         MOTION_VIDEO_CODEC=
         VALUE='off'
       ;;
       '*')
-        motion.log.error "movie_output: unknown option for movie_output: ${VALUE}"
+        bashio::log.error "movie_output: unknown option for movie_output: ${VALUE}"
         MOTION_VIDEO_CODEC=
         VALUE='off'
       ;;
@@ -592,11 +595,11 @@ else
 fi
 sed -i "s/^movie_output .*/movie_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"movie_output":"'"${VALUE}"'"'
-motion.log.info "Set movie_output to ${VALUE}"
+bashio::log.info "Set movie_output to ${VALUE}"
 if [ "${VALUE:-null}" != 'null' ]; then
   sed -i "s/^movie_output_motion .*/movie_output_motion ${VALUE}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"movie_output_motion":"'"${VALUE}"'"'
-  motion.log.info "Set movie_output_motion to ${VALUE}"
+  bashio::log.info "Set movie_output_motion to ${VALUE}"
 fi
 
 # set picture_type (jpeg, ppm)
@@ -604,21 +607,21 @@ VALUE=$(jq -r ".default.picture_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="jpeg"; fi
 sed -i "s/^picture_type .*/picture_type ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_type":"'"${VALUE}"'"'
-motion.log.debug "Set picture_type to ${VALUE}"
+bashio::log.debug "Set picture_type to ${VALUE}"
 
 # set netcam_keepalive (off,force,on)
 VALUE=$(jq -r ".default.netcam_keepalive" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 sed -i "s/^netcam_keepalive .*/netcam_keepalive ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"netcam_keepalive":"'"${VALUE}"'"'
-motion.log.debug "Set netcam_keepalive to ${VALUE}"
+bashio::log.debug "Set netcam_keepalive to ${VALUE}"
 
 # set netcam_userpass 
 VALUE=$(jq -r ".default.netcam_userpass" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
 sed -i "s/^netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"netcam_userpass":"'"${VALUE}"'"'
-motion.log.debug "Set netcam_userpass to ${VALUE}"
+bashio::log.debug "Set netcam_userpass to ${VALUE}"
 
 ## numeric values
 
@@ -627,61 +630,61 @@ VALUE=$(jq -r ".default.palette" "${CONFIG_PATH}")
 if [ "${VALUE:-}" = "null" ]; then VALUE=17; fi
 sed -i "s/^v4l2_palette .*/v4l2_palette ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"palette":'"${VALUE}"
-motion.log.debug "Set palette to ${VALUE}"
+bashio::log.debug "Set palette to ${VALUE}"
 
 # set pre_capture
 VALUE=$(jq -r ".default.pre_capture" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/^pre_capture .*/pre_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"pre_capture":'"${VALUE}"
-motion.log.debug "Set pre_capture to ${VALUE}"
+bashio::log.debug "Set pre_capture to ${VALUE}"
 
 # set post_capture
 VALUE=$(jq -r ".default.post_capture" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/^post_capture .*/post_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"post_capture":'"${VALUE}"
-motion.log.debug "Set post_capture to ${VALUE}"
+bashio::log.debug "Set post_capture to ${VALUE}"
 
 # set event_gap
 VALUE=$(jq -r ".default.event_gap" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
 sed -i "s/^event_gap .*/event_gap ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"event_gap":'"${VALUE}"
-motion.log.debug "Set event_gap to ${VALUE}"
+bashio::log.debug "Set event_gap to ${VALUE}"
 
 # set fov
 VALUE=$(jq -r ".default.fov" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=60; fi
 MOTION="${MOTION}"',"fov":'"${VALUE}"
-motion.log.debug "Set fov to ${VALUE}"
+bashio::log.debug "Set fov to ${VALUE}"
 
 # set minimum_motion_frames
 VALUE=$(jq -r ".default.minimum_motion_frames" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
 sed -i "s/^minimum_motion_frames .*/minimum_motion_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
-motion.log.debug "Set minimum_motion_frames to ${VALUE}"
+bashio::log.debug "Set minimum_motion_frames to ${VALUE}"
 
 # set quality
 VALUE=$(jq -r ".default.picture_quality" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
 sed -i "s/^picture_quality .*/picture_quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_quality":'"${VALUE}"
-motion.log.debug "Set picture_quality to ${VALUE}"
+bashio::log.debug "Set picture_quality to ${VALUE}"
 
 # set framerate
 VALUE=$(jq -r ".default.framerate" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
 sed -i "s/^framerate .*/framerate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"framerate":'"${VALUE}"
-motion.log.debug "Set framerate to ${VALUE}"
+bashio::log.debug "Set framerate to ${VALUE}"
 FRAMERATE=${VALUE}
 
 # set stream_maxrate
 VALUE=$(jq -r ".default.stream_maxrate" "${CONFIG_PATH}")
 if [ "${VALUE:-null}" = "null" ] || [ ${VALUE} -eq 0 ]; then VALUE=${FRAMERATE}; fi
-motion.log.debug "Set stream_maxrate to ${VALUE}"
+bashio::log.debug "Set stream_maxrate to ${VALUE}"
 sed -i "s/^stream_maxrate .*/stream_maxrate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_maxrate":'"${VALUE}"
 
@@ -690,28 +693,28 @@ VALUE=$(jq -r ".default.stream_motion" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE='on'; fi
 sed -i "s/^stream_motion .*/stream_motion ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_motion":"'"${VALUE}"'"'
-motion.log.debug "Set stream_motion to ${VALUE}"
+bashio::log.debug "Set stream_motion to ${VALUE}"
 
 # set text_changes
 VALUE=$(jq -r ".default.changes" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE='off'; fi
 sed -i "s/^text_changes .*/text_changes ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"changes":"'"${VALUE}"'"'
-motion.log.debug "Set text_changes to ${VALUE}"
+bashio::log.debug "Set text_changes to ${VALUE}"
 
 # set text_scale
 VALUE=$(jq -r ".default.text_scale" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
 sed -i "s/^text_scale .*/text_scale ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"text_scale":'"${VALUE}"
-motion.log.debug "Set text_scale to ${VALUE}"
+bashio::log.debug "Set text_scale to ${VALUE}"
 
 # set despeckle_filter
 VALUE=$(jq -r ".default.despeckle" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE='EedDl'; fi
 sed -i "s/^despeckle_filter .*/despeckle_filter ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"despeckle_filter":"'"${VALUE}"'"'
-motion.log.debug "Set despeckle_filter to ${VALUE}"
+bashio::log.debug "Set despeckle_filter to ${VALUE}"
 
 ## vid_control_params
 
@@ -742,63 +745,63 @@ VALUE=$(jq -r ".default.brightness" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/brightness=[0-9]\+/brightness=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"brightness":'"${VALUE}"
-motion.log.debug "Set brightness to ${VALUE}"
+bashio::log.debug "Set brightness to ${VALUE}"
 
 # set contrast
 VALUE=$(jq -r ".default.contrast" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/contrast=[0-9]\+/contrast=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"contrast":'"${VALUE}"
-motion.log.debug "Set contrast to ${VALUE}"
+bashio::log.debug "Set contrast to ${VALUE}"
 
 # set saturation
 VALUE=$(jq -r ".default.saturation" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/saturation=[0-9]\+/saturation=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"saturation":'"${VALUE}"
-motion.log.debug "Set saturation to ${VALUE}"
+bashio::log.debug "Set saturation to ${VALUE}"
 
 # set hue
 VALUE=$(jq -r ".default.hue" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/hue=[0-9]\+/hue=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"hue":'"${VALUE}"
-motion.log.debug "Set hue to ${VALUE}"
+bashio::log.debug "Set hue to ${VALUE}"
 
 ## other
 
 # set rotate
 VALUE=$(jq -r ".default.rotate" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.debug "Set rotate to ${VALUE}"
+bashio::log.debug "Set rotate to ${VALUE}"
 sed -i "s/^rotate .*/rotate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"rotate":'"${VALUE}"
 
 # set webcontrol_parms
 VALUE=$(jq -r ".default.webcontrol_parms" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
-motion.log.debug "Set webcontrol_parms to ${VALUE}"
+bashio::log.debug "Set webcontrol_parms to ${VALUE}"
 sed -i "s/^webcontrol_parms .*/webcontrol_parms ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"webcontrol_parms":'"${VALUE}"
 
 # set webcontrol_port
 VALUE=$(jq -r ".default.webcontrol_port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
-motion.log.debug "Set webcontrol_port to ${VALUE}"
+bashio::log.debug "Set webcontrol_port to ${VALUE}"
 sed -i "s/^webcontrol_port .*/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"webcontrol_port":'"${VALUE}"
 
 # set stream_port
 VALUE=$(jq -r ".default.stream_port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; fi
-motion.log.debug "Set stream_port to ${VALUE}"
+bashio::log.debug "Set stream_port to ${VALUE}"
 sed -i "s/^stream_port .*/stream_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_port":'"${VALUE}"
 
 # set stream_quality
 VALUE=$(jq -r ".default.stream_quality" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
-motion.log.debug "Set stream_quality to ${VALUE}"
+bashio::log.debug "Set stream_quality to ${VALUE}"
 sed -i "s/^stream_quality .*/stream_quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_quality":'"${VALUE}"
 
@@ -808,7 +811,7 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=640; fi
 sed -i "s/^width .*/width ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"width":'"${VALUE}"
 WIDTH=${VALUE}
-motion.log.debug "Set width to ${VALUE}"
+bashio::log.debug "Set width to ${VALUE}"
 
 # set height
 VALUE=$(jq -r ".default.height" "${CONFIG_PATH}")
@@ -816,7 +819,7 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=480; fi
 sed -i "s/^height .*/height ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"height":'"${VALUE}"
 HEIGHT=${VALUE}
-motion.log.debug "Set height to ${VALUE}"
+bashio::log.debug "Set height to ${VALUE}"
 
 ## THRESHOLD
 
@@ -833,51 +836,51 @@ if [ "${PCT:-null}" = 'null' ]; then
   PCT=${PCT:-null}
 fi
 
-motion.log.debug "Set threshold_percent to ${PCT}"
+bashio::log.debug "Set threshold_percent to ${PCT}"
 MOTION="${MOTION}"',"threshold_percent":'"${PCT}"
-motion.log.debug "Set threshold to ${VALUE}"
+bashio::log.debug "Set threshold to ${VALUE}"
 sed -i "s/^threshold .*/threshold ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold":'"${VALUE:-null}"
 
 # set threshold_maximum
 VALUE=$(jq -r ".default.threshold_maximum" "${CONFIG_PATH}")
 if [ "${VALUE:-null}" = "null" ]; then VALUE=0; fi
-motion.log.debug "Set threshold_maximum to ${VALUE}"
+bashio::log.debug "Set threshold_maximum to ${VALUE}"
 sed -i "s/^threshold_maximum .*/threshold_maximum ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold_maximum":'"${VALUE:-0}"
 
 # set threshold_tune (on/off)
 VALUE=$(jq -r ".default.threshold_tune" "${CONFIG_PATH}")
 if [ "${VALUE:-null}" = 'null' ]; then VALUE='off'; fi
-motion.log.debug "Set threshold_tune to ${VALUE}"
+bashio::log.debug "Set threshold_tune to ${VALUE}"
 sed -i "s/^threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
 
 # set lightswitch percent
 VALUE=$(jq -r ".default.lightswitch_percent" "${CONFIG_PATH}")
 if [ "${VALUE:-null}" = "null" ]; then VALUE=0; fi
-motion.log.debug "Set lightswitch percent to ${VALUE}"
+bashio::log.debug "Set lightswitch percent to ${VALUE}"
 sed -i "s/^lightswitch_percent .*/lightswitch_percent ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"lightswitch_percent":'"${VALUE:-null}"
 
 # set lightswitch frames
 VALUE=$(jq -r ".default.lightswitch_frames" "${CONFIG_PATH}")
 if [ "${VALUE:-null}" = "null" ]; then VALUE=5; fi
-motion.log.debug "Set lightswitch frames to ${VALUE}"
+bashio::log.debug "Set lightswitch frames to ${VALUE}"
 sed -i "s/^lightswitch_frames .*/lightswitch_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"lightswitch_frames":'"${VALUE}"
 
 # set movie_max_time
 VALUE=$(jq -r ".default.movie_max_time" "${CONFIG_PATH}")
 if [ "${VALUE:-null}" = "null" ]; then VALUE="30"; fi
-motion.log.debug "Set movie_max_time to ${VALUE}"
+bashio::log.debug "Set movie_max_time to ${VALUE}"
 sed -i "s/^movie_max_time .*/movie_max_time ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"movie_max_time":'"${VALUE:-30}"
 
 # set interval for events
 VALUE=$(jq -r '.default.interval' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=3600; fi
-motion.log.debug "Set watchdog interval to ${VALUE}"
+bashio::log.debug "Set watchdog interval to ${VALUE}"
 MOTION="${MOTION}"',"interval":'${VALUE}
 # used in MAIN
 MOTION_WATCHDOG_INTERVAL=${VALUE}
@@ -885,7 +888,7 @@ MOTION_WATCHDOG_INTERVAL=${VALUE}
 # set type
 VALUE=$(jq -r '.default.type' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="netcam"; fi
-motion.log.debug "Set type to ${VALUE}"
+bashio::log.debug "Set type to ${VALUE}"
 MOTION="${MOTION}"',"type":"'"${VALUE}"'"'
 
 ## ALL CAMERAS SHARE THE SAME USERNAME:PASSWORD CREDENTIALS
@@ -894,16 +897,16 @@ MOTION="${MOTION}"',"type":"'"${VALUE}"'"'
 USERNAME=$(jq -r ".default.username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".default.password" "${CONFIG_PATH}")
 if [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
-  motion.log.debug "Set authentication to Basic for both stream and webcontrol"
+  bashio::log.debug "Set authentication to Basic for both stream and webcontrol"
   sed -i "s/^stream_auth_method .*/stream_auth_method 1/" "${MOTION_CONF}"
   sed -i "s/^stream_authentication .*/stream_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
   sed -i "s/^webcontrol_authentication .*/webcontrol_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
-  motion.log.debug "Enable access for any host"
+  bashio::log.debug "Enable access for any host"
   sed -i "s/^stream_localhost .*/stream_localhost off/" "${MOTION_CONF}"
   sed -i "s/^webcontrol_localhost .*/webcontrol_localhost off/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"stream_auth_method":"Basic"'
 else
-  motion.log.debug "WARNING: no username and password; stream and webcontrol limited to localhost only"
+  bashio::log.debug "WARNING: no username and password; stream and webcontrol limited to localhost only"
   sed -i "s/^stream_localhost .*/stream_localhost on/" "${MOTION_CONF}"
   sed -i "s/^webcontrol_localhost .*/webcontrol_localhost on/" "${MOTION_CONF}"
 fi
@@ -918,7 +921,7 @@ MOTION="${MOTION}"'}'
 ## append to configuration JSON
 JSON="${JSON}"',"motion":'"${MOTION}"
 
-motion.log.debug "MOTION: ${MOTION}"
+bashio::log.debug "MOTION: ${MOTION}"
 
 ###
 ### process cameras 
@@ -935,11 +938,11 @@ CNUM=0
 
 for (( i=0; i < ncamera; i++)); do
 
-  motion.log.debug "+++ CAMERA ${i}"
+  bashio::log.debug "+++ CAMERA ${i}"
 
   ## TOP-LEVEL
   if [ -z "${CAMERAS:-}" ]; then CAMERAS='['; else CAMERAS="${CAMERAS}"','; fi
-  motion.log.debug "CAMERA #: $i"
+  bashio::log.debug "CAMERA #: $i"
   CAMERAS="${CAMERAS}"'{"id":'${i}
 
   # process camera type
@@ -949,27 +952,27 @@ for (( i=0; i < ncamera; i++)); do
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="netcam"; fi
   fi
   CAMERA_TYPE="${VALUE}"
-  motion.log.debug "Set type to ${VALUE}"
+  bashio::log.debug "Set type to ${VALUE}"
   CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
 
   # name
   VALUE=$(jq -r '.cameras['${i}'].name' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="camera-name${i}"; fi
-  motion.log.debug "Set name to ${VALUE}"
+  bashio::log.debug "Set name to ${VALUE}"
   CAMERAS="${CAMERAS}"',"name":"'"${VALUE}"'"'
   CNAME=${VALUE}
 
   # icon
   VALUE=$(jq -r '.cameras['${i}'].icon' "${CONFIG_PATH}")
   if [ "${VALUE:-null}" = 'null' ]; then VALUE='cctv'; fi
-  motion.log.debug "Set icon to ${VALUE}"
+  bashio::log.debug "Set icon to ${VALUE}"
   CAMERAS="${CAMERAS}"',"icon":"'"${VALUE}"'"'
 
   # w3w
   VALUE=$(jq '.cameras['${i}'].w3w?' "${CONFIG_PATH}")
   if [ "${VALUE:-null}" = 'null' ]; then VALUE='["","",""]'; fi
   CAMERAS="${CAMERAS}"',"w3w":'"${VALUE}"
-  motion.log.debug "Set w3w to ${VALUE}"
+  bashio::log.debug "Set w3w to ${VALUE}"
 
   # icon top
   VALUE=$(jq -r '.cameras['${i}'].top' "${CONFIG_PATH}")
@@ -981,55 +984,55 @@ for (( i=0; i < ncamera; i++)); do
       ICON_LEFT=${ICON_LEFT:-10} && ICON_LEFT=$((ICON_LEFT+5))
     fi
   fi
-  motion.log.debug "Set top to ${VALUE}"
+  bashio::log.debug "Set top to ${VALUE}"
   CAMERAS="${CAMERAS}"',"top":'"${VALUE}"
 
   # icon left
   VALUE=$(jq -r '.cameras['${i}'].left' "${CONFIG_PATH}")
   if [ "${VALUE:-null}" = 'null' ]; then VALUE=${ICON_LEFT:-10}; fi
-  motion.log.debug "Set left to ${VALUE}"
+  bashio::log.debug "Set left to ${VALUE}"
   CAMERAS="${CAMERAS}"',"left":'"${VALUE}"
 
   # process models string to array of strings
   VALUE=$(jq -r '.cameras['${i}'].models' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then
     W=$(echo "${WATSON:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
-    # motion.log.debug "WATSON: ${WATSON} ${W}"
+    # bashio::log.debug "WATSON: ${WATSON} ${W}"
     D=$(echo "${DIGITS:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)
-    # motion.log.debug "DIGITS: ${DIGITS} ${D}"
+    # bashio::log.debug "DIGITS: ${DIGITS} ${D}"
     VALUE=$(echo ${W} ${D})
     VALUE=$(echo "${VALUE}" | sed 's/ /,/g')
   else
     VALUE=$(echo "${VALUE}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
   fi
-  motion.log.debug "Set models to ${VALUE}"
+  bashio::log.debug "Set models to ${VALUE}"
   CAMERAS="${CAMERAS}"',"models":['"${VALUE}"']'
 
   # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
   VALUE=$(jq -r '.cameras['${i}'].fov' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE} -lt 1 ]; then VALUE=$(echo "${MOTION}" | jq -r '.fov'); fi
-  motion.log.debug "Set fov to ${VALUE}"
+  bashio::log.debug "Set fov to ${VALUE}"
   CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
 
   # width 
   VALUE=$(jq -r '.cameras['${i}'].width' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.width'); fi
   CAMERAS="${CAMERAS}"',"width":'"${VALUE}"
-  motion.log.debug "Set width to ${VALUE}"
+  bashio::log.debug "Set width to ${VALUE}"
   WIDTH=${VALUE}
 
   # height 
   VALUE=$(jq -r '.cameras['${i}'].height' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.height'); fi
   CAMERAS="${CAMERAS}"',"height":'"${VALUE}"
-  motion.log.debug "Set height to ${VALUE}"
+  bashio::log.debug "Set height to ${VALUE}"
   HEIGHT=${VALUE}
 
   # movie_max_time 
   VALUE=$(jq -r '.cameras['${i}'].movie_max_time' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.movie_max_time') && VALUE=${VALUE:-30}; fi
   CAMERAS="${CAMERAS}"',"movie_max_time":'"${VALUE}"
-  motion.log.debug "Set movie_max_time to ${VALUE}"
+  bashio::log.debug "Set movie_max_time to ${VALUE}"
   MOVIE_MAX_TIME=${VALUE}
 
   # framerate
@@ -1038,7 +1041,7 @@ for (( i=0; i < ncamera; i++)); do
     VALUE=$(jq -r '.framerate' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=$(echo "${MOTION}" | jq -r '.framerate') && VALUE=${VALUE:-5}; fi
   fi
-  motion.log.debug "Set framerate to ${VALUE}"
+  bashio::log.debug "Set framerate to ${VALUE}"
   CAMERAS="${CAMERAS}"',"framerate":'"${VALUE}"
   FRAMERATE=${VALUE}
 
@@ -1047,13 +1050,13 @@ for (( i=0; i < ncamera; i++)); do
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_maxrate') && VALUE=${VALUE:-0}; fi
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${STREAM_MAXRATE:-0} -gt ${FRAMERATE} ]; then VALUE=${FRAMERATE}; fi
   CAMERAS="${CAMERAS}"',"stream_maxrate":'"${VALUE}"
-  motion.log.debug "Set stream_maxrate to ${VALUE}"
+  bashio::log.debug "Set stream_maxrate to ${VALUE}"
   STREAM_MAXRATE=${VALUE}
 
   # stream_motion
   VALUE=$(jq -r '.cameras['${i}'].stream_motion' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_motion') && VALUE=${VALUE:-off}; fi
-  motion.log.debug "Set stream_motion to ${VALUE}"
+  bashio::log.debug "Set stream_motion to ${VALUE}"
   CAMERAS="${CAMERAS}"',"stream_motion":"'"${VALUE}"'"'
   STREAM_MOTION=${VALUE}
 
@@ -1063,14 +1066,14 @@ for (( i=0; i < ncamera; i++)); do
     VALUE=$(jq -r '.event_gap' "${CONFIG_PATH}")
     if [ "${VALUE:-null}" = "null" ] || [ ${VALUE:-0} -lt 1 ]; then VALUE=$(echo "${MOTION}" | jq -r '.event_gap') && VALUE=${VALUE:-5}; fi
   fi
-  motion.log.debug "Set event_gap to ${VALUE}"
+  bashio::log.debug "Set event_gap to ${VALUE}"
   CAMERAS="${CAMERAS}"',"event_gap":'"${VALUE}"
   EVENT_GAP=${VALUE}
 
   # target_dir 
   VALUE=$(jq -r '.cameras['${i}'].target_dir' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_TARGET_DIR}/${CNAME}"; fi
-  motion.log.debug "Set target_dir to ${VALUE}"
+  bashio::log.debug "Set target_dir to ${VALUE}"
   if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
   CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
   TARGET_DIR="${VALUE}"
@@ -1084,11 +1087,11 @@ for (( i=0; i < ncamera; i++)); do
           USERNAME=$(echo "${MOTION}" | jq -r '.username')
           PASSWORD=$(echo "${MOTION}" | jq -r '.password')
         fi
-        motion.log.debug "Set username to ${USERNAME}"
+        bashio::log.debug "Set username to ${USERNAME}"
         CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
-        motion.log.debug "Set username to ${PASSWORD}"
+        bashio::log.debug "Set username to ${PASSWORD}"
         CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
-        motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
+        bashio::log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
         CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
 	;;
     ftpd|mqtt)
@@ -1099,12 +1102,12 @@ for (( i=0; i < ncamera; i++)); do
         fi
         USERNAME=${VALUE%%:*}
         PASSWORD=${VALUE##*:}
-        motion.log.debug "Set username to ${USERNAME}"
+        bashio::log.debug "Set username to ${USERNAME}"
         CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
-        motion.log.debug "Set username to ${PASSWORD}"
+        bashio::log.debug "Set username to ${PASSWORD}"
         CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
 
-        motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
+        bashio::log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
         CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
 
         # live
@@ -1114,11 +1117,11 @@ for (( i=0; i < ncamera; i++)); do
           if [ "${VALUE}" != "null" ] || [ ! -z "${VALUE}" ]; then 
             CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
 	  else
-            motion.log.warn "Camera: ${CNAME}; both mjpeg_url and netcam_url are undefined; no live stream"
+            bashio::log.warn "Camera: ${CNAME}; both mjpeg_url and netcam_url are undefined; no live stream"
 	    VALUE=''
           fi
         fi
-        motion.log.debug "Set mjpeg_url to ${VALUE}"
+        bashio::log.debug "Set mjpeg_url to ${VALUE}"
         CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
 
         # addon_api
@@ -1132,7 +1135,7 @@ for (( i=0; i < ncamera; i++)); do
         # FTP share_dir
         if [ "${CAMERA_TYPE}" == 'ftpd' ]; then
           VALUE="${MOTION_SHARE_DIR%/*}/ftp/${CNAME}"
-          motion.log.debug "Set share_dir to ${VALUE}"
+          bashio::log.debug "Set share_dir to ${VALUE}"
           CAMERAS="${CAMERAS}"',"share_dir":"'"${VALUE}"'"'
         fi
 
@@ -1141,7 +1144,7 @@ for (( i=0; i < ncamera; i++)); do
         continue
 	;;
     *)
-        motion.log.error "Camera: ${CNAME}; number: ${CNUM}; invalid camera type: ${CAMERA_TYPE}; setting to unknown; skipping"
+        bashio::log.error "Camera: ${CNAME}; number: ${CNUM}; invalid camera type: ${CAMERA_TYPE}; setting to unknown; skipping"
         CAMERA_TYPE="unknown"
         CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
         # complete
@@ -1167,7 +1170,7 @@ for (( i=0; i < ncamera; i++)); do
       VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
       VALUE=$((VALUE + MOTION_COUNT))
-      motion.log.debug "Set webcontrol_port to ${VALUE}"
+      bashio::log.debug "Set webcontrol_port to ${VALUE}"
       sed -i "s/^webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
     else
       CNUM=$((CNUM+1))
@@ -1192,7 +1195,7 @@ for (( i=0; i < ncamera; i++)); do
     # calculate mjpeg_url for camera
     VALUE="http://${ipaddr}:${MOTION_STREAM_PORT}/${CNUM}"
   fi
-  motion.log.debug "Set mjpeg_url to ${VALUE}"
+  bashio::log.debug "Set mjpeg_url to ${VALUE}"
   CAMERAS="${CAMERAS}"',"mjpeg_url":"'${VALUE}'"'
 
   # addon_api
@@ -1217,49 +1220,49 @@ for (( i=0; i < ncamera; i++)); do
   # pre_capture
   VALUE=$(jq -r '.cameras['${i}'].pre_capture' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.pre_capture') && VALUE=${VALUE:-0}; fi
-  motion.log.debug "Set pre_capture to ${VALUE}"
+  bashio::log.debug "Set pre_capture to ${VALUE}"
   CAMERAS="${CAMERAS}"',"pre_capture":'"${VALUE}"
   echo "pre_capture ${VALUE}" >> "${CAMERA_CONF}"
 
   # post_capture
   VALUE=$(jq -r '.cameras['${i}'].post_capture' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.post_capture') && VALUE=${VALUE:-0}; fi
-  motion.log.debug "Set post_capture to ${VALUE}"
+  bashio::log.debug "Set post_capture to ${VALUE}"
   CAMERAS="${CAMERAS}"',"post_capture":'"${VALUE}"
   echo "post_capture ${VALUE}" >> "${CAMERA_CONF}"
 
   # rotate 
   VALUE=$(jq -r '.cameras['${i}'].rotate' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate') && VALUE=${VALUE:-0}; fi
-  motion.log.debug "Set rotate to ${VALUE}"
+  bashio::log.debug "Set rotate to ${VALUE}"
   CAMERAS="${CAMERAS}"',"rotate":'"${VALUE}"
   echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
 
   # picture_quality 
   VALUE=$(jq -r '.cameras['${i}'].picture_quality' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.picture_quality') && VALUE=${VALUE:-100}; fi
-  motion.log.debug "Set picture_quality to ${VALUE}"
+  bashio::log.debug "Set picture_quality to ${VALUE}"
   CAMERAS="${CAMERAS}"',"picture_quality":'"${VALUE}"
   echo "picture_quality ${VALUE}" >> "${CAMERA_CONF}"
 
   # stream_quality 
   VALUE=$(jq -r '.cameras['${i}'].stream_quality' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_quality') && VALUE=${VALUE:-100}; fi
-  motion.log.debug "Set stream_quality to ${VALUE}"
+  bashio::log.debug "Set stream_quality to ${VALUE}"
   CAMERAS="${CAMERAS}"',"stream_quality":'"${VALUE}"
   echo "stream_quality ${VALUE}" >> "${CAMERA_CONF}"
 
   # lightswitch_percent
   VALUE=$(jq -r '.cameras['${i}'].lightswitch_percent' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.lightswitch_percent') && VALUE=${VALUE:-0}; fi
-  motion.log.debug "Set lightswitch_percent to ${VALUE}"
+  bashio::log.debug "Set lightswitch_percent to ${VALUE}"
   CAMERAS="${CAMERAS}"',"lightswitch_percent":'"${VALUE}"
   echo "lightswitch_percent ${VALUE}" >> "${CAMERA_CONF}"
 
   # lightswitch_frames
   VALUE=$(jq -r '.cameras['${i}'].lightswitch_frames' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.lightswitch_frames') && VALUE=${VALUE:-5}; fi
-  motion.log.debug "Set lightswitch_frames to ${VALUE}"
+  bashio::log.debug "Set lightswitch_frames to ${VALUE}"
   CAMERAS="${CAMERAS}"',"lightswitch_frames":'"${VALUE}"
   echo "lightswitch_frames ${VALUE}" >> "${CAMERA_CONF}"
 
@@ -1277,9 +1280,9 @@ for (( i=0; i < ncamera; i++)); do
   if [ "${VALUE:-null}" = 'null' ] || [ ${VALUE:-0} -le 0 ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold'); fi 
   if [ "${PCT:-null}" = 'null' ] || [ ${PCT:-0} -le 0 ]; then PCT=$(echo "${VALUE} / ( ${WIDTH} * ${HEIGHT} ) * 100.0" | bc -l) && PCT=${PCT%%.*}; PCT=${PCT:-null}; fi
 
-  motion.log.debug "Camera ${CNAME:-}: set threshold_percent to ${PCT}"
+  bashio::log.debug "Camera ${CNAME:-}: set threshold_percent to ${PCT}"
   CAMERAS="${CAMERAS}"',"threshold_percent":'"${PCT}"
-  motion.log.debug "Camera ${CNAME:-}: set threshold to ${VALUE}"
+  bashio::log.debug "Camera ${CNAME:-}: set threshold to ${VALUE}"
   CAMERAS="${CAMERAS}"',"threshold":'"${VALUE}"
   echo "threshold ${VALUE}" >> "${CAMERA_CONF}"
 
@@ -1302,7 +1305,7 @@ for (( i=0; i < ncamera; i++)); do
       # network camera
       CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
       echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
-      motion.log.debug "Set netcam_url to ${VALUE}"
+      bashio::log.debug "Set netcam_url to ${VALUE}"
       netcam_url=$(echo "${VALUE}" | sed 's/mjpeg:/http:/')
 
       # userpass 
@@ -1310,15 +1313,15 @@ for (( i=0; i < ncamera; i++)); do
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass'); fi
       echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
       CAMERAS="${CAMERAS}"',"netcam_userpass":"'"${VALUE}"'"'
-      motion.log.debug "Set netcam_userpass to ${VALUE}"
+      bashio::log.debug "Set netcam_userpass to ${VALUE}"
       netcam_userpass=${VALUE}
 
       # test netcam_url
       alive=$(curl -sL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass} ${netcam_url} -o /dev/null)
       if [ "${alive:-000}" != '200' ]; then
-        motion.log.notice "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; bad response: ${alive}"
+        bashio::log.notice "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; bad response: ${alive}"
       else
-        motion.log.info "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; good response: ${alive}"
+        bashio::log.info "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; good response: ${alive}"
       fi
 
       # keepalive 
@@ -1326,9 +1329,9 @@ for (( i=0; i < ncamera; i++)); do
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
       echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
       CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
-      motion.log.debug "Set netcam_keepalive to ${VALUE}"
+      bashio::log.debug "Set netcam_keepalive to ${VALUE}"
     else
-      motion.log.error "No netcam_url specified: ${VALUE}; skipping"
+      bashio::log.error "No netcam_url specified: ${VALUE}; skipping"
       # close CAMERAS structure
       CAMERAS="${CAMERAS}"'}'
       continue;
@@ -1338,22 +1341,22 @@ for (( i=0; i < ncamera; i++)); do
     VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
     if [ "${VALUE:-null}" != 'null' ] ; then
       if [[ "${VALUE}" != /dev/video* ]]; then
-        motion.log.error "Camera: ${i}; name: ${CNAME}; invalid videodevice ${VALUE}; exiting"
+        bashio::log.error "Camera: ${i}; name: ${CNAME}; invalid videodevice ${VALUE}; exiting"
         exit 1
       fi
     else
       VALUE="/dev/video0"
     fi
     echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
-    motion.log.debug "Set videodevice to ${VALUE}"
+    bashio::log.debug "Set videodevice to ${VALUE}"
     # palette
     VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.palette'); fi
     CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
     echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
-    motion.log.debug "Set palette to ${VALUE}"
+    bashio::log.debug "Set palette to ${VALUE}"
   else
-    motion.log.error "Invalid camera type: ${CAMERA_TYPE}"
+    bashio::log.error "Invalid camera type: ${CAMERA_TYPE}"
   fi
 
   # close CAMERAS structure
@@ -1369,7 +1372,7 @@ else
   CAMERAS='null'
 fi
 
-motion.log.debug "CAMERAS: $(echo "${CAMERAS}" | jq -c '.')"
+bashio::log.debug "CAMERAS: $(echo "${CAMERAS}" | jq -c '.')"
 
 ###
 ## append camera, finish JSON configuration, and validate
@@ -1378,16 +1381,16 @@ motion.log.debug "CAMERAS: $(echo "${CAMERAS}" | jq -c '.')"
 JSON="${JSON}"',"cameras":'"${CAMERAS}"'}'
 echo "${JSON}" | jq -c '.' > "$(motion.config.file)"
 if [ ! -s "$(motion.config.file)" ]; then
-  motion.log.error "INVALID CONFIGURATION; metadata: ${JSON}"
+  bashio::log.error "INVALID CONFIGURATION; metadata: ${JSON}"
   exit 1
 fi
-motion.log.debug "CONFIGURATION; file: $(motion.config.file); metadata: $(jq -c '.' $(motion.config.file))"
+bashio::log.debug "CONFIGURATION; file: $(motion.config.file); metadata: $(jq -c '.' $(motion.config.file))"
 
 ###
 ## configure inotify() for any 'ftpd' cameras
 ###
 
-motion.log.debug "Settting up notifywait for FTPD cameras"
+bashio::log.debug "Settting up notifywait for FTPD cameras"
 ftp_notifywait.sh "$(motion.config.file)"
 
 ###
@@ -1400,10 +1403,10 @@ CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
 for (( i = 1; i <= MOTION_COUNT;  i++)); do
   # test for configuration file
   if [ ! -s "${CONF}" ]; then
-     motion.log.error "missing configuration for daemon ${i} with ${CONF}"
+     bashio::log.error "missing configuration for daemon ${i} with ${CONF}"
      exit 1
   fi
-  motion.log.debug "Starting motion configuration ${i}: ${CONF}"
+  bashio::log.debug "Starting motion configuration ${i}: ${CONF}"
   PID_FILE="${MOTION_CONF%%.*}.${i}.pid"
   motion -b -c "${CONF}" -p ${PID_FILE}
   PID_FILES=(${PID_FILES[@]} ${PID_FILE})
@@ -1416,20 +1419,20 @@ done
 chmod go+rx /data /data/options.json
 
 if [ ${#PID_FILES[@]} -le 0 ]; then
-  motion.log.info "ZERO motion daemons"
-  motion.log.info "STARTING APACHE (foreground); ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
+  bashio::log.info "ZERO motion daemons"
+  bashio::log.info "STARTING APACHE (foreground); ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
   start_apache_foreground ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
 else 
-  motion.log.info "${#PID_FILES[@]} motion daemons"
-  motion.log.info "STARTING APACHE (background); ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
+  bashio::log.info "${#PID_FILES[@]} motion daemons"
+  bashio::log.info "STARTING APACHE (background); ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
   start_apache_background ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
 
   ## monitor motion daemons
-  motion.log.info "STARTING MOTION WATCHDOG; ${PID_FILES}"
+  bashio::log.info "STARTING MOTION WATCHDOG; ${PID_FILES}"
   ## forever
   while true; do
     ## publish configuration
-    motion.log.notice "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
+    bashio::log.notice "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
     motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)"
 
     i=0
@@ -1439,7 +1442,7 @@ else
         if [ "${pid:-null}" != 'null' ]; then
           found=$(ps alxwww | grep 'motion -b' | awk '{ print $1 }' | egrep ${pid})
           if [ -z "${found:-}" ]; then
-            motion.log.notice "Daemon with PID: ${pid} is not found; restarting"
+            bashio::log.notice "Daemon with PID: ${pid} is not found; restarting"
             if [ ${i} -gt 0 ]; then
               CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
             else
@@ -1447,17 +1450,17 @@ else
             fi
             motion -b -c "${CONF}" -p ${PID_FILE}
           else
-            motion.log.info "motion daemon running with PID: ${pid}"
+            bashio::log.info "motion daemon running with PID: ${pid}"
           fi
         else
-          motion.log.error "PID file contents invalid: ${PID_FILE}"
+          bashio::log.error "PID file contents invalid: ${PID_FILE}"
         fi
       else
-        motion.log.error "No motion daemon PID file: ${PID_FILE}"
+        bashio::log.error "No motion daemon PID file: ${PID_FILE}"
       fi
       i=$((i+1))
     done
-    motion.log.info "watchdog sleeping..."
+    bashio::log.info "watchdog sleeping..."
     sleep ${MOTION_WATCHDOG_INTERVAL:-3600}
   done
 fi

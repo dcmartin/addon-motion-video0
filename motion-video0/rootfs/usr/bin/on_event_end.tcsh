@@ -9,6 +9,10 @@ if ( $?MOTION_LOG_LEVEL ) then
   if ( ${MOTION_LOG_LEVEL} == "trace" ) setenv DEBUG
 endif
 
+if ( $?MOTION_LOGTO == 0 ) then
+  setenv MOTION_LOGTO /tmp/motion.log
+endif
+
 if ($?DEBUG) echo "$0:t $$ --" `date` "START ${*}" >> ${MOTION_LOGTO}
 
 ## REQUIRES date utilities

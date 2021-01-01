@@ -1,8 +1,15 @@
 #!/bin/tcsh
 
-setenv DEBUG
+if ( $?MOTION_LOG_LEVEL ) then
+  if ( ${MOTION_LOG_LEVEL} == "debug" ) setenv DEBUG
+  if ( ${MOTION_LOG_LEVEL} == "trace" ) setenv DEBUG
+endif
 
-if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >>& /dev/stderr
+if ( $?MOTION_LOGTO == 0 ) then
+  setenv MOTION_LOGTO /tmp/motion.log
+endif
+
+if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >>& ${MOTION_LOGTO}
 
 if ($#argv == 2) then
   set file = "$argv[1]"
@@ -16,15 +23,15 @@ if ($#argv == 2) then
 	on_new_jpg.sh "$file" "$output"
 	breaksw
       default:
-	if ($?DEBUG) echo "$0:t $$ -- $file:e unimplemented" >>& /tmp/motion.log
+	if ($?DEBUG) echo "$0:t $$ -- $file:e unimplemented" >>& ${MOTION_LOGTO}
 	breaksw
     endsw
   else
-    echo "$0:t $$ -- no such file: $file" >>& /tmp/motion.log
+    echo "$0:t $$ -- no such file: $file" >>& ${MOTION_LOGTO}
   endif
 else
-  echo "$0:t $$ -- invalid arguments $*" >>& /tmp/motion.log
+  echo "$0:t $$ -- invalid arguments $*" >>& ${MOTION_LOGTO}
 endif
 
 done:
-  if ($?VERBOSE) echo "$0:t $$ -- FINISH" `date` >>& /tmp/motion.log
+  if ($?VERBOSE) echo "$0:t $$ -- FINISH" `date` >>& ${MOTION_LOGTO}
