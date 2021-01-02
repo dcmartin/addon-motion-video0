@@ -1317,11 +1317,12 @@ for (( i=0; i < ncamera; i++)); do
       netcam_userpass=${VALUE}
 
       # test netcam_url
-      alive=$(curl -sL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass} ${netcam_url} -o /dev/null)
-      if [ "${alive:-000}" != '200' ]; then
-        bashio::log.notice "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; bad response: ${alive}"
+      alive=$(curl -fsqL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass} ${netcam_url} 2> /dev/null || echo '000')
+
+      if [ "${alive:-}" != '200' ]; then
+        bashio::log.info "Network camera at ${netcam_url:-null}; userpass: ${netcam_userpass:-null}; bad response: ${alive:-null}"
       else
-        bashio::log.info "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; good response: ${alive}"
+        bashio::log.info "Network camera at ${netcam_url:-null}; userpass: ${netcam_userpass:-null}; good response: ${alive:-null}"
       fi
 
       # keepalive 
