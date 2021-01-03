@@ -20,6 +20,7 @@ if [ "${events:-null}" != 'null' ]; then
   if [ $(echo "${events}" | jq '.events|length') -gt 0 ]; then
     id=$(echo "${events}" | jq -r '.events[0].id')
     event="${DIR}/${camera:-}/${id}.json"
+
     movie=$(jq -r '.movie.file' "${event}")
     if [ -e "${movie:-}" ]; then
       base64_encoded_file=$(mktemp).json
@@ -29,6 +30,17 @@ if [ "${events:-null}" != 'null' ]; then
       echo '"}' >> "${base64_encoded_file}"
       jq -c -s add "${event}" "${base64_encoded_file}" > ${temp}
     fi
+
+    mask=$(jq -r '.mask.file' "${event}")
+    if [ -e "${mask:-}" ]; then
+      base64_encoded_file=$(mktemp).json
+
+      echo -n '{"mask":"' > "${base64_encoded_file}"
+      base64 -w 0 -i "${mask}" >> "${base64_encoded_file}"
+      echo '"}' >> "${base64_encoded_file}"
+      jq -c -s add "${event}" "${base64_encoded_file}" > ${temp}
+    fi
+
   fi
 fi
 
