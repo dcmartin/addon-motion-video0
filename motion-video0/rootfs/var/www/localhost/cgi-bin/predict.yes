@@ -27,10 +27,12 @@ fi
 
 ./bin/predict.sh 'yes' "${camera:-}" "${id:-}" "${entity:-}" "${results:-}" &
 
+mqtt=$(jq '.mqtt' /data/options.json)
+host=$(echo "${mqtt}" | jq -r '.host')
+
 echo "Content-Type: application/json; charset=utf-8"
 echo "Access-Control-Allow-Origin: *"
 echo "Cache-Control: no-cache"
 echo "Cache-Control: max-age=30"
 echo ""
-echo '{"result":true}'
-rm -f ${temp}
+echo '{"result":true,"url":"http://'${host}':8000/annotate.html?camera='${camera}'"}' 
