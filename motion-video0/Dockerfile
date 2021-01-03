@@ -206,8 +206,8 @@ ARG BUILD_VERSION
 
 # Labels
 LABEL \
-    io.hass.name="MOTION" \
-    io.hass.description="Motion package as addon w/ support for image classification" \
+    io.hass.name="motion-classic" \
+    io.hass.description="motion-project.github.io as addon w/ MQTT" \
     io.hass.arch="${BUILD_ARCH}" \
     io.hass.type="addon" \
     io.hass.version=${BUILD_VERSION} \
