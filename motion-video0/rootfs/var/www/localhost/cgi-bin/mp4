@@ -10,23 +10,33 @@ if [ ! -z "${QUERY_STRING:-}" ]; then
   if [ "${id}" = "${QUERY_STRING}" ]; then id=; fi
 fi
 
-file=
+if [ ! -z "${QUERY_STRING:-}" ]; then
+  event=$(echo "$QUERY_STRING" | sed 's/.*event=\([^&]*\).*/\1/')
+  if [ "${event}" != "${QUERY_STRING}" ]; then id='[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-'"${event}"; fi
+fi
+
+if [ ! -z "${QUERY_STRING:-}" ]; then
+  file=$(echo "$QUERY_STRING" | sed 's/.*file=\([^&]*\).*/\1/')
+  if [ "${file}" != "${QUERY_STRING}" ]; then id="${file}"; fi
+fi
+
+temp=
 
 if [ ! -z "${id:-}" ]; then
-  file=$(mktemp)
-  ./bin/mp4.sh "${camera:-}" "${id}" > ${file}
+  temp=$(mktemp)
+  ./bin/mp4.sh "${camera:-}" "${id}" > ${temp}
 
-  if [ -s "${file}" ]; then
+  if [ -s "${temp}" ]; then
     echo "Content-Type: image/mp4"
     echo "Access-Control-Allow-Origin: *"
     echo "Cache-Control: no-cache"
     echo "Cache-Control: max-age=30"
     echo ""
-    cat ${file}
+    cat ${temp}
   fi
 fi
 
-if [ -z "${file:-}" ] || [ ! -s "${file}" ]; then
+if [ -z "${temp:-}" ] || [ ! -s "${temp}" ]; then
   echo "Content-Type: application/json; charset=utf-8"
   echo "Access-Control-Allow-Origin: *"
   echo "Cache-Control: no-cache"
@@ -35,4 +45,4 @@ if [ -z "${file:-}" ] || [ ! -s "${file}" ]; then
   echo '{"request":"'${id:-}'","camera":"'${camera:-}'","error":"not found"}'
 fi
 
-if [ ! -z "${file:-}" ]; then rm -f "${file}"; fi
+if [ ! -z "${temp:-}" ]; then rm -f "${temp}"; fi

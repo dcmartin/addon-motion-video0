@@ -1,0 +1,36 @@
+#!/bin/bash
+
+if [ ! -z "${QUERY_STRING:-}" ]; then
+  camera=$(echo "$QUERY_STRING" | sed 's/.*camera=\([^&]*\).*/\1/')
+  if [ "${camera}" = "${QUERY_STRING}" ]; then camera=; fi
+fi
+
+if [ ! -z "${QUERY_STRING:-}" ]; then
+  entity=$(echo "$QUERY_STRING" | sed 's/.*entity=\([^&]*\).*/\1/')
+  if [ "${entity}" = "${QUERY_STRING}" ]; then entity=; fi
+fi
+
+if [ ! -z "${QUERY_STRING:-}" ]; then
+  results=$(echo "$QUERY_STRING" | sed 's/.*results=\([^&]*\).*/\1/')
+  if [ "${results}" = "${QUERY_STRING}" ]; then results=; fi
+fi
+
+if [ ! -z "${QUERY_STRING:-}" ]; then
+  id=$(echo "$QUERY_STRING" | sed 's/.*id=\([^&]*\).*/\1/')
+  if [ "${id}" = "${QUERY_STRING}" ]; then id=; fi
+fi
+
+if [ ! -z "${QUERY_STRING:-}" ]; then
+  event=$(echo "$QUERY_STRING" | sed 's/.*event=\([^&]*\).*/\1/')
+  if [ "${event}" != "${QUERY_STRING}" ]; then id="[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-${event}"; fi
+fi
+
+./bin/predict.sh 'no' "${camera:-}" "${id:-}" "${entity:-}" "${results:-}" &
+
+echo "Content-Type: application/json; charset=utf-8"
+echo "Access-Control-Allow-Origin: *"
+echo "Cache-Control: no-cache"
+echo "Cache-Control: max-age=30"
+echo ""
+echo '{"result":true}'
+rm -f ${temp}
