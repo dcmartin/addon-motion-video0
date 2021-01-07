@@ -19,7 +19,7 @@ myip()
 
 find_rtsp()
 {
-  local result=$(sudo find-rtsp.sh $(myip) 2> /dev/null)
+  local result=$(find-rtsp.sh $(myip) 2> /dev/null)
 
   echo ${result:-null}
 }
@@ -44,8 +44,9 @@ exec 1>&- # close stdout
 exec 2>&- # close stderr
 
 # doit
-echo '{"rtsp":'$(find_rtsp)'}' | jq -c '.' > ${temp}
-# echo '{"rtsp":'$(find_rtsp)'}' | jq -c '[.rtsp[]|select(.status=="found")]' > ${temp}
+echo '{"results":'$(find_rtsp)'}' | jq -c '.' > ${temp}
+# echo '{"results":'$(find_rtsp)'}' | jq -c '[.rtsp[]|select(.status=="found")]' > ${temp}
 
 mv -f ${temp} ${output}
+chmod 444 ${output}
 rm -f ${pidfile}
