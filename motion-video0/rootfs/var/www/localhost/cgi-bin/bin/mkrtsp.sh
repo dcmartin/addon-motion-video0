@@ -45,6 +45,7 @@ exec 2>&- # close stderr
 
 # doit
 echo '{"rtsp":'$(find_rtsp)'}' | jq -c '.' > ${temp}
+# echo '{"rtsp":'$(find_rtsp)'}' | jq -c '[.rtsp[]|select(.status=="found")]' > ${temp}
 
 mv -f ${temp} ${output}
 rm -f ${pidfile}

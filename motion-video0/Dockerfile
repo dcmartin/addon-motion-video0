@@ -134,6 +134,9 @@ RUN apk add --no-cache \
 RUN apk add --no-cache \
   tcsh@edge
 
+RUN apk add --no-cache \
+  nmap
+
 ### LIVE555
 
 #RUN \
