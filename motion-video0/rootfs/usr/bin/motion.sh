@@ -797,6 +797,7 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_POR
 bashio::log.debug "Set stream_port to ${VALUE}"
 sed -i "s/^stream_port .*/stream_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_port":'"${VALUE}"
+MOTION_STREAM_PORT=${VALUE}
 
 # set stream_quality
 VALUE=$(jq -r ".default.stream_quality" "${CONFIG_PATH}")
@@ -1158,20 +1159,43 @@ for (( i=0; i < ncamera; i++)); do
   ##
 
   if (( CNUM / 10 )); then
+    bashio::log.debug "Camera number divisible by 10"
     if (( CNUM % 10 == 0 )); then
-      MOTION_COUNT=$((MOTION_COUNT + 1))
-      MOTION_STREAM_PORT=$((MOTION_STREAM_PORT + MOTION_COUNT))
-      CNUM=1
+      bashio::log.debug "Camera number modulus of 10; creating new configuration file; current: ${MOTION_CONF}"
+
+      # new configuration
       CONF="${MOTION_CONF%%.*}.${MOTION_COUNT}.${MOTION_CONF##*.}"
+
+      # start camera numbering over at one
+      CNUM=1
+
+      # copy prior configuration
       cp "${MOTION_CONF}" "${CONF}"
-      sed -i 's|^camera|; camera|' "${CONF}"
       MOTION_CONF=${CONF}
-      # get webcontrol_port (base)
+      bashio::log.debug "Created configuration; count: ${MOTION_COUNT}; file: ${MOTION_CONF}"
+
+      # reset camera(s)
+      sed -i 's|^camera|; camera|' "${MOTION_CONF}"
+
+      # set stream port
+      VALUE=$(jq -r ".stream_port" "${CONFIG_PATH}")
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; fi
+      VALUE=$((VALUE + MOTION_COUNT))
+      sed -i "s/^stream_port .*/stream_port ${VALUE}/" "${MOTION_CONF}"
+      MOTION_STREAM_PORT=${VALUE}
+      bashio::log.info "Configuration: ${MOTION_CONF}; set stream port: ${MOTION_STREAM_PORT}"
+
+      # set webcontrol_port
       VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
       VALUE=$((VALUE + MOTION_COUNT))
-      bashio::log.debug "Set webcontrol_port to ${VALUE}"
       sed -i "s/^webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
+
+      # increment
+      bashio::log.info "Configuration ${MOTION_COUNT}: ${MOTION_CONF}; set control port: ${VALUE}"
+
+      MOTION_COUNT=$((MOTION_COUNT + 1))
+
     else
       CNUM=$((CNUM+1))
     fi
@@ -1179,12 +1203,16 @@ for (( i=0; i < ncamera; i++)); do
     if [ ${MOTION_COUNT} -eq 0 ]; then MOTION_COUNT=1; fi
     CNUM=$((CNUM+1))
   fi
-  # create configuration file
+
+  # create camera configuration file
   if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then 
     CAMERA_CONF="${MOTION_CONF%/*}/${CNAME}.conf"
+    bashio::log.debug "Camera configuration file; ${CAMERA_CONF}; ${MOTION_CONF%/*} != ${MOTION_CONF}"
   else
     CAMERA_CONF="${CNAME}.conf"
+    bashio::log.debug "Camera configuration file; ${CAMERA_CONF}; ${MOTION_CONF%/*} = ${MOTION_CONF}"
   fi
+
   # add to JSON
   CAMERAS="${CAMERAS}"',"server":'"${MOTION_COUNT}"
   CAMERAS="${CAMERAS}"',"cnum":'"${CNUM}"
@@ -1317,7 +1345,7 @@ for (( i=0; i < ncamera; i++)); do
       netcam_userpass=${VALUE}
 
       # test netcam_url
-      alive=$(curl -fsqL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass} ${netcam_url} 2> /dev/null || echo '000')
+      alive=$(curl -fsqL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass} ${netcam_url} 2> /dev/null || true)
 
       if [ "${alive:-}" != '200' ]; then
         bashio::log.info "Network camera at ${netcam_url:-null}; userpass: ${netcam_userpass:-null}; bad response: ${alive:-null}"
@@ -1421,11 +1449,11 @@ chmod go+rx /data /data/options.json
 
 if [ ${#PID_FILES[@]} -le 0 ]; then
   bashio::log.info "ZERO motion daemons"
-  bashio::log.info "STARTING APACHE (foreground); ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
+  bashio::log.info "STARTING APACHE in foreground; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
   start_apache_foreground ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
 else 
   bashio::log.info "${#PID_FILES[@]} motion daemons"
-  bashio::log.info "STARTING APACHE (background); ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
+  bashio::log.info "STARTING APACHE in background; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
   start_apache_background ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
 
   ## monitor motion daemons
@@ -1441,7 +1469,7 @@ else
       if [ ! -z "${PID_FILE:-}" ] && [ -s "${PID_FILE}" ]; then
         pid=$(cat ${PID_FILE})
         if [ "${pid:-null}" != 'null' ]; then
-          found=$(ps alxwww | grep 'motion -b' | awk '{ print $1 }' | egrep ${pid})
+          found=$(ps alxwww | grep 'motion -b' | awk '{ print $1 }' | egrep ${pid} || true)
           if [ -z "${found:-}" ]; then
             bashio::log.notice "Daemon with PID: ${pid} is not found; restarting"
             if [ ${i} -gt 0 ]; then
