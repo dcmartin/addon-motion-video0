@@ -1462,7 +1462,8 @@ else
   while true; do
     ## publish configuration
     bashio::log.notice "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
-    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)"
+    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)" \
+      || bashio::log.error "Unable to publish to MQTT"
 
     i=0
     for PID_FILE in ${PID_FILES[@]}; do
