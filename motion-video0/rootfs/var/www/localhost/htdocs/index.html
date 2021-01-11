@@ -12,22 +12,60 @@ window.onload = function () {
   site = rfr[2].split(':');
   port = site[1];
   site = site[0];
+
   cid = document.getElementById("controls");
   cid.href = prot + "//" + site + ":8080/";
+
   cid = document.getElementById("data");
   cid.href = prot + "//" + site + ":7999/cameras";
+
   cid = document.getElementById("cameras");
   cid.href = prot + "//" + site + ":8090/1";
+
+  cid = document.getElementById("config");
+  cid.href = prot + "//" + site + ":7999/cgi-bin/config";
+
+  cid = document.getElementById("options");
+  cid.href = prot + "//" + site + ":7999/cgi-bin/options";
+
+  cid = document.getElementById("rtsp");
+  cid.href = prot + "//" + site + ":7999/cgi-bin/rtsp";
+
+  cid = document.getElementById("events");
+  cid.href = prot + "//" + site + ":7999/cgi-bin/events";
+
+  cid = document.getElementById("storage");
+  cid.href = prot + "//" + site + ":7999/cgi-bin/storage";
+
+  cid = document.getElementById("test");
+  cid.href = prot + "//" + site + ":7999/cgi-bin/test";
+
 }
 </script>
 
 <body>
 
-<h1>MOTION</h1>
+<h1><a href="https://github.com/dcmartin/hassio-addons/blob/master/motion-video0/README.md"><code>motion-video0</code></a></h1>
+
+<h2>UI</h2>
+
 <ul>
-<li><h2><a id="cameras" href="">Test camera</a></h2><div id="lovelace"></div></li>
-<li><h2><a id="controls" href="">Add-on controls</a></h2><div id="threads"></div></li>
-<li><h2><a id="data" href="">Event data &amp; images</a></h2><div id="datasets"></div></li>
+<li><a id="cameras" href="">Test UI</a><div id="lovelace"></div></li>
+<li><a id="controls" href="">Add-on controls</a><div id="threads"></div></li>
+<li><a id="data" href="">Event data &amp; images</a><div id="datasets"></div></li>
+</ul>
+
+<h2>API</h2>
+
+<ul>
+<li>Test API: <a id="test" href=""><code>test</code></a><div id="test"></div></li>
+<li>Add-on configuration: <a id="config" href=""><code>config</code></a><div id="config"></div></li>
+<li>Add-on options: <a id="options" href=""><code>options</code></a><div id="options"></div></li>
+<li>Discovered RTSP cameras: <a id="rtsp" href=""><code>rtsp</code></a><div id="rtsp"></div></li>
+<li>Camera events: <a id="events" href=""><code>events</code></a><div id="events"></div></li>
+<li>Storage data: <a id="storage" href=""><code>storage</code></a><div id="storage"></div></li>
+</ul>
+
 </ul>
 
 </body>

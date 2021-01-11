@@ -44,8 +44,7 @@ exec 1>&- # close stdout
 exec 2>&- # close stderr
 
 # doit
-echo '{"results":'$(find_rtsp)'}' | jq -c '.' > ${temp}
-# echo '{"results":'$(find_rtsp)'}' | jq -c '[.rtsp[]|select(.status=="found")]' > ${temp}
+echo '{"timestamp":"'$(date -u +%FT%TZ)'","rtsp":'$(find_rtsp)'}' | jq -c '.' > ${temp}
 
 mv -f ${temp} ${output}
 chmod 444 ${output}

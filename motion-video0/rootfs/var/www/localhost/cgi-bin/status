@@ -5,4 +5,4 @@ echo "Access-Control-Allow-Origin: *"
 #echo "Cache-Control: no-cache"
 echo "Cache-Control: max-age=30"
 echo ""
-./bin/motion.status.sh
+./bin/status.sh

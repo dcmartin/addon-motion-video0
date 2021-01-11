@@ -122,7 +122,7 @@ find_rtsp()
       done
       if [ ! -z "${rtsp:-}" ]; then rtsp="${rtsp}]"; else rtsp='null'; fi
     fi
-    result='{"nmap":{"timeout":'${nmap_timeout}',"net":"'${net}'","ipaddr":"'${ipaddr}'"},"connect":'${connect}',"max":'${maxtime}',"rtsp":'"${rtsp:-null}"'}'
+    result='{"nmap":{"timeout":'${nmap_timeout}',"net":"'${net}'","ipaddr":"'${ipaddr}'"},"connect":'${connect}',"max":'${maxtime}',"devices":'"${rtsp:-null}"'}'
   fi
 
   echo "${result:-null}"

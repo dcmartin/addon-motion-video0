@@ -24,27 +24,34 @@ motion.restart()
   echo ']}'
 }
 
-#{
-#  "host": "localhost",
-#  "port": 8080,
-#  "cameras": [
-#    { "camera": "poolcam", "status": true, "id": 1 },
-#    { "camera": "dogshed", "status": false, "id": 2 },
-#    { "camera": "dogshedfront", "status": true, "id": 3 },
-#    { "camera": "sheshed", "status": true, "id": 4 },
-#    { "camera": "dogpond", "status": false, "id": 5 },
-#    { "camera": "pondview", "status": false, "id": 6 },
-#    { "camera": "backyardcam", "status": true, "id": 7 }
-#  ]
-#}
-
 motion.status()
+{
+  local host=${1:-localhost}
+  local port=${2:-8080}
+  local options="$(${0%/*}/options.sh 2> /dev/null)"
+  local nnetcam=$(echo "${options}" | jq '[.cameras[]|select(.type=="netcam")]|length')
+  local nlocal=$(echo "${options}" | jq '[.cameras[]|select(.type=="local")]|length')
+  local ndaemon=$(echo "$((nnetcam + nlocal)) / 10" | bc)
+  local i=0
+
+  echo -n '{"host":"'${host}'","daemons":['
+  while [ ${i:-0} -le ${ndaemon:-0} ]; do
+    if [ ${i} -gt 0 ]; then echo ','; fi
+    echo '{"port":'${port}',"cameras":['
+    echo $(daemon.status ${host} ${port})
+    echo ']}'
+    port=$((port+1))
+    i=$((i+1))
+  done
+  echo ']}'
+}
+
+daemon.status()
 {
   local host=${1:-localhost}
   local port=${2:-8080}
   local cameras=($(curl --connect-timeout 10 -qsSL http://${host}:${port}/0/detection/status 2> /dev/null | awk '{ print $5 }'))
 
-  echo -n '{"host":"'${host}'","port":'${port}',"cameras":['
   if [ ${#cameras[@]} -gt 0 ]; then
     i=1
     for c in ${cameras[@]}; do
@@ -59,11 +66,10 @@ motion.status()
       i=$((i+1))
     done
   fi
-  echo ']}'
 }
 
 ###
 ### MAIN
 ###
 
-CMD=${0##*/} && CMD=${CMD%%.sh*} && ${CMD} ${*} | jq
+CMD=${0##*/} && CMD=${CMD%%.sh*} && ${CMD} ${*} | jq -c '.'
