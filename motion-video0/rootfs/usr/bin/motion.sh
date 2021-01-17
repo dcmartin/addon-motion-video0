@@ -830,6 +830,8 @@ if [ "${VALUE:-null}" = 'null' ] || [ ${VALUE:-0} -le 0 ]; then
   if [ "${VALUE:-null}" != 'null' ] && [ ${VALUE:-0} -gt 0 ]; then 
     PCT=${VALUE}
     VALUE=$(echo "${PCT} * ( ${WIDTH} * ${HEIGHT} ) / 100.0" | bc -l) && VALUE=${VALUE%%.*}
+  else
+    VALUE=1000
   fi
 fi
 if [ "${PCT:-null}" = 'null' ]; then 
@@ -837,8 +839,8 @@ if [ "${PCT:-null}" = 'null' ]; then
   PCT=${PCT:-null}
 fi
 
-bashio::log.debug "Set threshold_percent to ${PCT}"
-MOTION="${MOTION}"',"threshold_percent":'"${PCT}"
+bashio::log.debug "Set threshold_percent to ${PCT:-null}"
+MOTION="${MOTION}"',"threshold_percent":'"${PCT:-null}"
 bashio::log.debug "Set threshold to ${VALUE}"
 sed -i "s/^threshold .*/threshold ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold":'"${VALUE:-null}"
@@ -852,7 +854,7 @@ MOTION="${MOTION}"',"threshold_maximum":'"${VALUE:-0}"
 
 # set threshold_tune (on/off)
 VALUE=$(jq -r ".default.threshold_tune" "${CONFIG_PATH}")
-if [ "${VALUE:-null}" = 'null' ]; then VALUE='off'; fi
+if [ "${VALUE:-null}" = 'null' ]; then VALUE='on'; fi
 bashio::log.debug "Set threshold_tune to ${VALUE}"
 sed -i "s/^threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
