@@ -516,7 +516,7 @@ bashio::log.debug "Set locate_motion_style to ${VALUE}"
 
 # set post_pictures; enumerated [on,center,first,last,best,most]
 VALUE=$(jq -r '.default.post_pictures' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="best"; fi
 bashio::log.debug "Set post_pictures to ${VALUE}"
 MOTION="${MOTION}"',"post_pictures":"'"${VALUE}"'"'
 export MOTION_POST_PICTURES="${VALUE}"
