@@ -9,86 +9,86 @@ RUN \
         musl musl-dev
 RUN \
     apk add --no-cache \
-        autoconf=2.69-r2
+        autoconf
 RUN \
     apk add --no-cache \
-        automake=1.16.2-r0
+        automake
 RUN \
     apk add --no-cache \
-        build-base=0.5-r2
+        build-base
 RUN \
     apk add --no-cache \
         curl
 RUN \
     apk add --no-cache \
-        ffmpeg-dev=4.3.1-r0
+        ffmpeg-dev
 RUN \
     apk add --no-cache \
-        gcc=9.3.0-r2
+        gcc
 RUN \
     apk add --no-cache \
-        gettext-dev=0.20.2-r0
+        gettext-dev
 RUN \
     apk add --no-cache \
-        git=2.26.2-r0
+        git
 RUN \
     apk add --no-cache \
-        jpeg-dev=9d-r0
+        jpeg-dev
 RUN \
     apk add --no-cache \
-        libjpeg-turbo-dev=2.0.5-r0
+        libjpeg-turbo-dev
 RUN \
     apk add --no-cache \
-        libmicrohttpd-dev=0.9.70-r0
+        libmicrohttpd-dev
 RUN \
     apk add --no-cache \
-        libwebp-dev=1.1.0-r0
+        libwebp-dev
 RUN \
     apk add --no-cache \
-        linux-headers=5.4.5-r1
+        linux-headers
 RUN \
     apk add --no-cache \
-        python2-dev=2.7.18-r0
+        python2-dev
 RUN \
     apk add --no-cache \
-        v4l-utils-dev=1.20.0-r0
+        v4l-utils-dev
 
 RUN \
     apk add --no-cache \
-        cifs-utils=6.10-r1
+        cifs-utils
 RUN \
     apk add --no-cache \
-        ffmpeg=4.3.1-r0
+        ffmpeg
 RUN \
     apk add --no-cache \
-        ffmpeg-libs=4.3.1-r0
+        ffmpeg-libs
 RUN \
     apk add --no-cache \
         libcurl
 RUN \
     apk add --no-cache \
-        libjpeg=9d-r0
+        libjpeg
 RUN \
     apk add --no-cache \
-        libjpeg-turbo=2.0.5-r0
+        libjpeg-turbo
 RUN \
     apk add --no-cache \
-        libintl=0.20.2-r0
+        libintl
 RUN \
     apk add --no-cache \
-        libmicrohttpd=0.9.70-r0
+        libmicrohttpd
 RUN \
     apk add --no-cache \
-        libwebp=1.1.0-r0
+        libwebp
 RUN \
     apk add --no-cache \
-        mosquitto-clients=1.6.9-r0
+        mosquitto-clients
 RUN \
     apk add --no-cache \
-        python2=2.7.18-r0
+        python2
 RUN \
     apk add --no-cache \
-        v4l-utils=1.20.0-r0
+        v4l-utils
 
 RUN MOTION_VERSION=4.3.1 \
     && curl -J -L -o /tmp/motion.tar.gz \
@@ -131,8 +131,8 @@ RUN apk add --no-cache \
 RUN apk add --no-cache \
   imagemagick
 
-RUN apk add --no-cache \
-  tcsh@edge
+RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/ \
+  tcsh
 
 RUN apk add --no-cache \
   nmap
