@@ -648,7 +648,7 @@ bashio::log.debug "Set post_capture to ${VALUE}"
 
 # set event_gap
 VALUE=$(jq -r ".default.event_gap" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=15; fi
 sed -i "s/^event_gap .*/event_gap ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"event_gap":'"${VALUE}"
 bashio::log.debug "Set event_gap to ${VALUE}"

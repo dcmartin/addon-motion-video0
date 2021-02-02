@@ -204,8 +204,6 @@ motion_event_json()
     local njson=${#jsons[@]}
 
     jsonfile="${jsons[$((njson-1))]}"
-  else
-    motion.log.warn "${FUNCNAME[0]} no JSON found; directory: ${dir}"
   fi
 
   if [ "${jsonfile:-null}" != 'null' ] && [ -s "${jsonfile:-}" ]; then
@@ -215,10 +213,10 @@ motion_event_json()
     local elapsed=$((end-start))
     local timestamp=$(date -u +%FT%TZ)
 
-    jq '.id="'${ts}-${en}'"|.end='${end}'|.elapsed='${elapsed}'|.timestamp.end="'${timestamp}'"' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && result="${jsonfile}"
-    motion.log.debug "${FUNCNAME[0]}; metdata: $(jq -c '.' ${jsonfile})"
+    jq -c '.id="'${ts}-${en}'"|.end='${end}'|.elapsed='${elapsed}'|.timestamp.end="'${timestamp}'"' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && result="${jsonfile}"
+    motion.log.debug "${FUNCNAME[0]}; metadata: $(jq -c '.' ${jsonfile})"
   else
-    motion.log.error "${FUNCNAME[0]} no JSON file: ${jsonfile}"
+    motion.log.warn "${FUNCNAME[0]} no JSON found; directory: ${dir}"
   fi
   echo "${result:-}"
 }
@@ -601,11 +599,15 @@ on_event_end()
   # exec 1>&- # close stdout
   # exec 2>&- =''# close stderr
 
-  motion.log.info "${FUNCNAME[0]} begin; event: ${*}"
-
-  local result=$(motion_event_end ${*} | jq -c '.')
-
-  motion.log.info "${FUNCNAME[0]} finish; event: ${*}; result: ${result}"
+  if [ ! -e ${TMPFS:-/tmp}/${1} ]; then
+    touch ${TMPFS:-/tmp}/${1}
+    motion.log.info "${FUNCNAME[0]} begin; event: ${*}"
+    local result=$(motion_event_end ${*} | jq -c '.')
+    motion.log.info "${FUNCNAME[0]} finish; event: ${*}; result: ${result}"
+    rm -f ${TMPFS:-/tmp}/${1}
+  else
+    motion.log.warn "${FUNCNAME[0]} camera in-process; event: ${*}"
+  fi
 }
 
 ###

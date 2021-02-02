@@ -6,7 +6,7 @@ motion.restart()
   local port=${2:-8080}
   local camera=${3:-}
 
-  local cameras=($(motion.status ${host} ${port} | jq -r '.cameras[].camera'))
+  local cameras=($(motion.status ${host} ${port} | jq -r '.cameras?[].camera?'))
 
   echo -n '{"host":"'${host}'","port":'${port}',"cameras":['
   if [ ${#cameras[@]} -gt 0 ]; then
@@ -29,21 +29,25 @@ motion.status()
   local host=${1:-localhost}
   local port=${2:-8080}
   local options="$(${0%/*}/options.sh 2> /dev/null)"
-  local nnetcam=$(echo "${options}" | jq '[.cameras[]|select(.type=="netcam")]|length')
-  local nlocal=$(echo "${options}" | jq '[.cameras[]|select(.type=="local")]|length')
-  local ndaemon=$(echo "$((nnetcam + nlocal)) / 10" | bc)
-  local i=0
+  if [ "${options:-null}" != 'null' ]; then
+    local nnetcam=$(echo "${options}" | jq '[.cameras[]|select(.type=="netcam")]|length')
+    local nlocal=$(echo "${options}" | jq '[.cameras[]|select(.type=="local")]|length')
+    local ndaemon=$(echo "$((nnetcam + nlocal)) / 10" | bc)
+    local i=0
 
-  echo -n '{"host":"'${host}'","daemons":['
-  while [ ${i:-0} -le ${ndaemon:-0} ]; do
-    if [ ${i} -gt 0 ]; then echo ','; fi
-    echo '{"port":'${port}',"cameras":['
-    echo $(daemon.status ${host} ${port})
+    echo -n '{"host":"'${host}'","daemons":['
+    while [ ${i:-0} -le ${ndaemon:-0} ]; do
+      if [ ${i} -gt 0 ]; then echo ','; fi
+      echo '{"port":'${port}',"cameras":['
+      echo $(daemon.status ${host} ${port})
+      echo ']}'
+      port=$((port+1))
+      i=$((i+1))
+    done
     echo ']}'
-    port=$((port+1))
-    i=$((i+1))
-  done
-  echo ']}'
+  else
+    echo 'null'
+  fi
 }
 
 daemon.status()

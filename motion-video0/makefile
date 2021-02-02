@@ -132,7 +132,7 @@ service-build:
 push-service: 
 	@$(MAKE) TAG=$(TAG) HZN_ORG_ID=$(HZN_ORG_ID) DOCKER_REPOSITORY=$(DOCKER_REPOSITORY) BUILD_ARCH=$(BUILD_ARCH) push
 
-service-push: 
+service-push:  service-build
 	@echo "${MC}>>> MAKE --" $$(date +%T) "-- pushing service: ${SERVICE_NAME}; architectures: ${SERVICE_ARCH_SUPPORT}""${NC}" > /dev/stderr
 	@for arch in $(SERVICE_ARCH_SUPPORT); do \
 	  $(MAKE) TAG=$(TAG) HZN_ORG_ID=$(HZN_ORG_ID) DOCKER_REPOSITORY=$(DOCKER_REPOSITORY) BUILD_ARCH="$${arch}" push-service; \
