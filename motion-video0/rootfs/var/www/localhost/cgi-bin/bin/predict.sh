@@ -1,8 +1,8 @@
 #!/bin/bash
 
-exec 0>&- # close stdin 
-exec 1>&- # close stdout 
-exec 2>&- # close stderr 
+exec 0>&- # close stdin
+exec 1>&- # close stdout
+exec 2>&- # close stderr
 
 event=$(mktemp).json
 
@@ -28,9 +28,8 @@ if [ "${events:-null}" != 'null' ]; then
       echo -n '{"movie":"' > "${base64_encoded_file}"
       base64 -w 0 -i "${movie}" >> "${base64_encoded_file}"
       echo '"}' >> "${base64_encoded_file}"
-      jq -c -s add "${event}" "${base64_encoded_file}" > ${temp}
-      rm -f "${event}" "${base64_encoded_file}"
-      event=${temp}
+      jq -c -s add "${event}" "${base64_encoded_file}" > ${event}.$$ && mv -f ${event}.$$ ${event}
+      rm -f "${base64_encoded_file}"
     fi
 
     mask=$(jq -r '.mask.file' "${event}")
@@ -40,9 +39,8 @@ if [ "${events:-null}" != 'null' ]; then
       echo -n '{"mask":"' > "${base64_encoded_file}"
       base64 -w 0 -i "${mask}" >> "${base64_encoded_file}"
       echo '"}' >> "${base64_encoded_file}"
-      jq -c -s add "${event}" "${base64_encoded_file}" > ${temp}
-      rm -f "${event}" "${base64_encoded_file}"
-      event=${temp}
+      jq -c -s add "${event}" "${base64_encoded_file}" > ${event}.$$ && mv -f ${event}.$$ ${event}
+      rm -f "${base64_encoded_file}"
     fi
 
   fi
