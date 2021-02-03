@@ -61,7 +61,7 @@ start_apache_background()
 
 start_apache()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local foreground=${1}; shift
 
@@ -100,7 +100,7 @@ start_apache()
   mkdir -p /run/apache2
 
   # start HTTP daemon
-  bashio::log.info "Starting Apache: ${conf} ${host} ${port}"
+  bashio::log.debug "Starting Apache: ${conf} ${host} ${port}"
 
   if [ "${foreground:-false}" = 'true' ]; then
     MOTION_JSON_FILE=$(motion.config.file) httpd -E ${MOTION_LOGTO} -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
@@ -111,7 +111,7 @@ start_apache()
 
 process_config_camera_ftpd()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -121,7 +121,7 @@ process_config_camera_ftpd()
 
 process_config_camera_mjpeg()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -131,7 +131,7 @@ process_config_camera_mjpeg()
 
 process_config_camera_http()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -141,7 +141,7 @@ process_config_camera_http()
 
 process_config_camera_v4l2()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json='null'
@@ -189,7 +189,7 @@ process_config_camera_v4l2()
 ## cameras
 process_config_cameras()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -200,7 +200,7 @@ process_config_cameras()
 ## defaults
 process_config_defaults()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local json
@@ -211,7 +211,7 @@ process_config_defaults()
 ## mqtt
 process_config_mqtt()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local config="${*}"
   local result=
@@ -221,25 +221,25 @@ process_config_mqtt()
   # local json server (hassio addon)
   value=$(echo "${config}" | jq -r ".host")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value="core-mosquitto"; fi
-  bashio::log.debug "Using MQTT host: ${value}"
+  bashio::log.info "Using MQTT host: ${value}"
   json='{"host":"'"${value}"'"'
 
   # username
   value=$(echo "${config}" | jq -r ".username")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=""; fi
-  bashio::log.debug "Using MQTT username: ${value}"
+  bashio::log.info "Using MQTT username: ${value}"
   json="${json}"',"username":"'"${value}"'"'
 
   # password
   value=$(echo "${config}" | jq -r ".password")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=""; fi
-  bashio::log.debug "Using MQTT password: ${value}"
+  bashio::log.info "Using MQTT password: ${value}"
   json="${json}"',"password":"'"${value}"'"'
 
   # port
   value=$(echo "${config}" | jq -r ".port")
   if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=1883; fi
-  bashio::log.debug "Using MQTT port: ${value}"
+  bashio::log.info "Using MQTT port: ${value}"
   json="${json}"',"port":'"${value}"'}'
 
   echo "${json:-null}"
@@ -248,7 +248,7 @@ process_config_mqtt()
 ## process configuration 
 process_config_system()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local timestamp=$(date -u +%FT%TZ)
   local ipaddr=$(ip addr | egrep -A4 UP | egrep 'inet ' | egrep -v 'scope host lo' | egrep -v 'scope global docker' | awk '{ print $2 }')
@@ -260,7 +260,7 @@ process_config_system()
 ## process configuration 
 process_config_motion()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local path=${1}
   local json
@@ -275,7 +275,7 @@ process_config_motion()
 
 start_motion()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
   local path=${1}
   local json
@@ -349,25 +349,25 @@ JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 # set unit_system for events
 VALUE=$(jq -r '.unit_system' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
-bashio::log.info "Set unit_system to ${VALUE}"
+bashio::log.debug "Set unit_system to ${VALUE}"
 JSON="${JSON}"',"unit_system":"'"${VALUE}"'"'
 
 # set latitude for events
 VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-bashio::log.info "Set latitude to ${VALUE}"
+bashio::log.debug "Set latitude to ${VALUE}"
 JSON="${JSON}"',"latitude":'"${VALUE}"
 
 # set longitude for events
 VALUE=$(jq -r '.longitude' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-bashio::log.info "Set longitude to ${VALUE}"
+bashio::log.debug "Set longitude to ${VALUE}"
 JSON="${JSON}"',"longitude":'"${VALUE}"
 
 # set elevation for events
 VALUE=$(jq -r '.elevation' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-bashio::log.info "Set elevation to ${VALUE}"
+bashio::log.debug "Set elevation to ${VALUE}"
 JSON="${JSON}"',"elevation":'"${VALUE}"
 
 ##
@@ -377,22 +377,22 @@ JSON="${JSON}"',"elevation":'"${VALUE}"
 # local MQTT server (hassio addon)
 VALUE=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="mqtt"; fi
-bashio::log.info "Using MQTT at ${VALUE}"
+bashio::log.debug "Using MQTT at ${VALUE}"
 MQTT='{"host":"'"${VALUE}"'"'
 # username
 VALUE=$(jq -r ".mqtt.username" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-bashio::log.info "Using MQTT username: ${VALUE}"
+bashio::log.debug "Using MQTT username: ${VALUE}"
 MQTT="${MQTT}"',"username":"'"${VALUE}"'"'
 # password
 VALUE=$(jq -r ".mqtt.password" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-bashio::log.info "Using MQTT password: ${VALUE}"
+bashio::log.debug "Using MQTT password: ${VALUE}"
 MQTT="${MQTT}"',"password":"'"${VALUE}"'"'
 # port
 VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
-bashio::log.info "Using MQTT port: ${VALUE}"
+bashio::log.debug "Using MQTT port: ${VALUE}"
 MQTT="${MQTT}"',"port":'"${VALUE}"'}'
 
 ## finish
@@ -423,8 +423,6 @@ fi
 ###
 ### MOTION
 ###
-
-bashio::log.debug "+++ MOTION"
 
 MOTION='{'
 
@@ -551,12 +549,12 @@ else
 fi
 sed -i "s/^picture_output .*/picture_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_output":"'"${VALUE}"'"'
-bashio::log.info "Set picture_output to ${VALUE}"
+bashio::log.debug "Set picture_output to ${VALUE}"
 PICTURE_OUTPUT=${VALUE}
 
 # set movie_output (on, off)
 if [ "${PICTURE_OUTPUT:-}" = 'best' ] || [ "${PICTURE_OUTPUT:-}" = 'first' ]; then
-  bashio::log.notice "Picture output: ${PICTURE_OUTPUT}; setting movie_output: on"
+  bashio::log.debug "Picture output: ${PICTURE_OUTPUT}; setting movie_output: on"
   VALUE='on'
 else
   VALUE=$(jq -r '.default.movie_output' "${CONFIG_PATH}")
@@ -595,11 +593,11 @@ else
 fi
 sed -i "s/^movie_output .*/movie_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"movie_output":"'"${VALUE}"'"'
-bashio::log.info "Set movie_output to ${VALUE}"
+bashio::log.debug "Set movie_output to ${VALUE}"
 if [ "${VALUE:-null}" != 'null' ]; then
   sed -i "s/^movie_output_motion .*/movie_output_motion ${VALUE}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"movie_output_motion":"'"${VALUE}"'"'
-  bashio::log.info "Set movie_output_motion to ${VALUE}"
+  bashio::log.debug "Set movie_output_motion to ${VALUE}"
 fi
 
 # set picture_type (jpeg, ppm)
@@ -1094,7 +1092,7 @@ for (( i=0; i < ncamera; i++)); do
         CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
         bashio::log.debug "Set username to ${PASSWORD}"
         CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
-        bashio::log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
+        bashio::log.debug "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
         CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
 	;;
     ftpd|mqtt)
@@ -1110,7 +1108,7 @@ for (( i=0; i < ncamera; i++)); do
         bashio::log.debug "Set username to ${PASSWORD}"
         CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
 
-        bashio::log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
+        bashio::log.debug "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
         CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
 
         # live
@@ -1185,7 +1183,7 @@ for (( i=0; i < ncamera; i++)); do
       VALUE=$((VALUE + MOTION_COUNT))
       sed -i "s/^stream_port .*/stream_port ${VALUE}/" "${MOTION_CONF}"
       MOTION_STREAM_PORT=${VALUE}
-      bashio::log.info "Configuration: ${MOTION_CONF}; set stream port: ${MOTION_STREAM_PORT}"
+      bashio::log.debug "Configuration: ${MOTION_CONF}; set stream port: ${MOTION_STREAM_PORT}"
 
       # set webcontrol_port
       VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
@@ -1194,7 +1192,7 @@ for (( i=0; i < ncamera; i++)); do
       sed -i "s/^webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
 
       # increment
-      bashio::log.info "Configuration ${MOTION_COUNT}: ${MOTION_CONF}; set control port: ${VALUE}"
+      bashio::log.debug "Configuration ${MOTION_COUNT}: ${MOTION_CONF}; set control port: ${VALUE}"
 
       MOTION_COUNT=$((MOTION_COUNT + 1))
 
@@ -1379,7 +1377,7 @@ for (( i=0; i < ncamera; i++)); do
       VALUE="/dev/video0"
     fi
     echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
-    bashio::log.debug "Set videodevice to ${VALUE}"
+    bashio::log.info "Set videodevice to ${VALUE}"
     # palette
     VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.palette'); fi
@@ -1450,16 +1448,16 @@ done
 chmod go+rx /data /data/options.json
 
 if [ ${#PID_FILES[@]} -le 0 ]; then
-  bashio::log.info "ZERO motion daemons"
-  bashio::log.info "STARTING APACHE in foreground; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
+  bashio::log.debug "ZERO motion daemons"
+  bashio::log.debug "STARTING APACHE in foreground; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
   start_apache_foreground ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
 else 
-  bashio::log.info "${#PID_FILES[@]} motion daemons"
-  bashio::log.info "STARTING APACHE in background; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
+  bashio::log.debug "${#PID_FILES[@]} motion daemons"
+  bashio::log.debug "STARTING APACHE in background; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
   start_apache_background ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
 
   ## monitor motion daemons
-  bashio::log.info "STARTING MOTION WATCHDOG; ${PID_FILES}"
+  bashio::log.debug "STARTING MOTION WATCHDOG; ${PID_FILES}"
   ## forever
   while true; do
     ## publish configuration
@@ -1482,7 +1480,7 @@ else
             fi
             motion -b -c "${CONF}" -p ${PID_FILE}
           else
-            bashio::log.info "motion daemon running with PID: ${pid}"
+            bashio::log.debug "motion daemon running with PID: ${pid}"
           fi
         else
           bashio::log.error "PID file contents invalid: ${PID_FILE}"
@@ -1492,7 +1490,7 @@ else
       fi
       i=$((i+1))
     done
-    bashio::log.info "watchdog sleeping..."
+    bashio::log.debug "watchdog sleeping..."
     sleep ${MOTION_WATCHDOG_INTERVAL:-3600}
   done
 fi
