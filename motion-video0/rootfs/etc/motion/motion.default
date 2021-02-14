@@ -2,8 +2,8 @@ auto_brightness off
 daemon on
 despeckle_filter EedDl
 emulate_motion off
-event_gap 60
-framerate 5
+event_gap 15
+framerate 2
 height 480
 lightswitch_frames 5
 lightswitch_percent 0
@@ -16,10 +16,10 @@ minimum_frame_time 0
 minimum_motion_frames 5
 movie_codec mp4
 movie_filename %Y%m%d%H%M%S-%v
-movie_max_time 30
+movie_max_time 120
 movie_output off
 movie_output_motion off
-movie_quality 80
+movie_quality 50
 netcam_keepalive on
 netcam_tolerant_check on
 netcam_use_tcp on
@@ -35,10 +35,10 @@ on_picture_save /usr/bin/on_picture_save.sh %$ %v %f %n %K %L %i %J %D %N
 picture_filename %Y%m%d%H%M%S-%v-%q
 picture_output best
 picture_output_motion off
-picture_quality 80
+picture_quality 50
 picture_type jpeg
 post_capture 0
-pre_capture 1
+pre_capture 0
 quiet on
 rotate 0
 setup_mode off
@@ -53,7 +53,7 @@ stream_maxrate 5
 stream_motion on
 stream_port 8090
 stream_preview_method 0
-stream_quality 80
+stream_quality 50
 target_dir /var/lib/motion
 text_changes on
 text_event %Y%m%d%H%M%S
@@ -61,8 +61,8 @@ text_left %$\n%Y-%m-%d\n%T %q %{fps}
 text_right 
 text_scale 2
 threshold 1500
-threshold_maximum 100000
-threshold_tune off
+threshold_maximum 0
+threshold_tune on
 timelapse_filename %Y%m%d-timelapse
 timelapse_interval 0
 timelapse_mode daily

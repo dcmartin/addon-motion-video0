@@ -599,15 +599,19 @@ on_event_end()
   # exec 1>&- # close stdout
   # exec 2>&- =''# close stderr
 
-  if [ ! -e ${TMPFS:-/tmp}/${1} ]; then
-    touch ${TMPFS:-/tmp}/${1}
-    motion.log.info "${FUNCNAME[0]} begin; event: ${*}"
-    local result=$(motion_event_end ${*} | jq -c '.')
-    motion.log.info "${FUNCNAME[0]} finish; event: ${*}; result: ${result}"
-    rm -f ${TMPFS:-/tmp}/${1}
-  else
-    motion.log.warn "${FUNCNAME[0]} camera in-process; event: ${*}"
-  fi
+  while [ -e ${TMPFS:-/tmp}/${1} ]; do
+
+    local interval=$(jq -r '.motion.interval' $(motion.config.file))
+
+    motion.log.warn "${FUNCNAME[0]} camera in-process; event: ${*}; waiting for ${interval} seconds"
+    sleep ${interval}
+  done
+
+  touch ${TMPFS:-/tmp}/${1}
+  motion.log.info "${FUNCNAME[0]} begin; event: ${*}"
+  local result=$(motion_event_end ${*} | jq -c '.')
+  motion.log.info "${FUNCNAME[0]} finish; event: ${*}; result: ${result}"
+  rm -f ${TMPFS:-/tmp}/${1}
 }
 
 ###
