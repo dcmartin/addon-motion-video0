@@ -880,7 +880,7 @@ MOTION="${MOTION}"',"movie_max_time":'"${VALUE:-30}"
 
 # set interval for events
 VALUE=$(jq -r '.default.interval' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${EVENT_GAP}; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${EVENT_GAP:-15}; fi
 bashio::log.debug "Set interval to ${VALUE}"
 MOTION="${MOTION}"',"interval":'${VALUE}
 
@@ -1158,13 +1158,14 @@ for (( i=0; i < ncamera; i++)); do
   esac
 
   ##
-  ## handle more than one motion process (10 camera/process)
+  ## handle more than one motion process (10 is max camera/process); set to 3
   ##
+  CAMERA_MAX=3
 
-  if (( CNUM / 10 )); then
-    bashio::log.debug "Camera number divisible by 10"
-    if (( CNUM % 10 == 0 )); then
-      bashio::log.debug "Camera number modulus of 10; creating new configuration file; current: ${MOTION_CONF}"
+  if (( CNUM / ${CAMERA_MAX} )); then
+    bashio::log.debug "Camera number divisible by ${CAMERA_MAX}"
+    if (( CNUM % ${CAMERA_MAX} == 0 )); then
+      bashio::log.debug "Camera number modulus of ${CAMERA_MAX}; creating new configuration file; current: ${MOTION_CONF}"
 
       # new configuration
       CONF="${MOTION_CONF%%.*}.${MOTION_COUNT}.${MOTION_CONF##*.}"
