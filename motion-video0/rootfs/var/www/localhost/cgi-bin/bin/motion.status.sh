@@ -32,7 +32,7 @@ motion.status()
   if [ "${options:-null}" != 'null' ]; then
     local nnetcam=$(echo "${options}" | jq '[.cameras[]|select(.type=="netcam")]|length')
     local nlocal=$(echo "${options}" | jq '[.cameras[]|select(.type=="local")]|length')
-    local ndaemon=$(echo "$((nnetcam + nlocal)) / 10" | bc)
+    local ndaemon=$(echo "$((nnetcam + nlocal)) / 3" | bc)
     local i=0
 
     echo -n '{"host":"'${host}'","daemons":['
