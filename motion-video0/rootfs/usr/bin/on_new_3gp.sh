@@ -13,7 +13,7 @@ endif
 
 setenv MOTION_JSON_FILE /etc/motion/motion.json
 
-if ($?DEBUG) echo "$0:t $$ -- START $*" `date` >>& ${MOTION_LOGTO}
+if ($?DEBUG) echo "$0:t $$" `date` "-- START $*" >>& ${MOTION_LOGTO}
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -57,7 +57,7 @@ if ($?MOTION_VIDEO_DIRECT2MJPEG) then
 endif
 
 # get last event number
-set last = "/tmpfs/$0:t.$camera"
+set last = "/tmp/$0:t.$camera"
 if (-e "$last") then
   set event = `cat "$last"`
   @ event++
@@ -78,7 +78,7 @@ set event_id = `echo "$event" | awk '{ printf("%02d",$1) }'`
   on_event_start.sh $camera $event_id $dateattr
 
 ### breakdown video into frames
-set tmpdir = "/tmpfs/$0:t/$$"
+set tmpdir = "/tmp/$0:t/$$"
 set pattern = "${input}-%03d.$format"
 mkdir -p "$tmpdir"
 # make all frames

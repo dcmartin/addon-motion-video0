@@ -223,7 +223,7 @@ set totaldiff = 0
 set totalsize = 0
 set ps = ()
 set diffs = ()
-set tmpdir = "/tmpfs/$0:t/$$"
+set tmpdir = "/tmp/$0:t/$$"
 
 mkdir -p $tmpdir
 
