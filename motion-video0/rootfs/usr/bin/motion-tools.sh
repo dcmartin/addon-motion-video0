@@ -107,6 +107,22 @@ motion.config.device()
   echo "${result:-}"
 }
 
+function motion.config.format()
+{
+  motion.log.trace "${FUNCNAME[0]}"
+
+  local file=$(motion.config.file)
+  local result=""
+
+  if [ -s "${file}" ]; then
+    result=$(jq -r '.format?' ${file})
+    if [ "${result:-null}" = 'null' ]; then result='gif'; fi
+  else
+    motion.log.warn "no configuration file"
+  fi
+  echo "${result:-}"
+}
+
 motion.config.mqtt()
 {
   motion.log.trace "${FUNCNAME[0]}"
