@@ -6,109 +6,78 @@ source ${USRBIN:-/usr/bin}/motion-tools.sh
 ### functions
 ###
 
-motion_event_movie_convert()
+motion::ffmpeg_mp42gif()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  motion.log.debug "${FUNCNAME[0]} ${*}"
 
-  local input="${1}"
-  local output="${2}"
-  local fps=${3:-5}
-  local seconds=${4:-15}
-  local width=${5:-640}
+  local input="${1:-}"
+  local output="${2:-}"
+  local fps=${3:-}
+  local seconds=${4:-0}
+  local width=${5:-}
   local ffmpeg=$(mktemp)
 
-  if [ ${seconds} -gt 0 ]; then
-    ffmpeg -t ${seconds} -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> ${ffmpeg}
+  if [ ${seconds} -gt 0 ] && [ -s "${input}" ] && [ ${fps:-0} -gt 0 ] && [ ${width:-0} -gt 0 ]; then
+    ffmpeg -y -t ${seconds} -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> ${ffmpeg}
+    if [ ! -s "${output}" ]; then
+      motion.log.error "${FUNCNAME[0]}: ffmpeg failed: $(cat ${ffmpeg})"
+      rm -f "${ffmpeg:-}"
+    fi
   else
-    motion.log.warn "${FUNCNAME[0]} ZERO seconds"
+    motion.log.error "${FUNCNAME[0]}: invalid arguments; input: ${input:-}; FPS: ${fps}; duration: ${seconds}s; width: ${width}; output: ${output}"
   fi
-  if [ ! -s "${output}" ]; then
-    motion.log.error "${FUNCNAME[0]} ffmpeg failed: $(cat ${ffmpeg})"
-    output=
-  fi
-  rm -f "${ffmpeg:-}"
   echo "${output}"
 }
 
-motion_event_animated()
+function motion::event_animated()
 {
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
-  local jsonfile="${1}"
+  local jsonfile="${1:-}"
+  local type="${2:-movie}"
+  local format="${3:-gif}"
+  local id=$(jq -r '.id' ${jsonfile})
   local camera=$(jq -r '.camera' ${jsonfile})
+  local elapsed=$(jq -r '.elapsed' ${jsonfile})
+  local movie=$(jq -r ".${type}?" ${jsonfile})
   local width=$(jq -r '.cameras[]|select(.name=="'${camera}'").width' $(motion.config.file))
-  local movie=$(jq '.movie' ${jsonfile})
 
   if [ "${movie:-null}" != 'null' ]; then
-    local input=$(echo "${movie}" | jq -r '.file')
+    local input=$(echo "${movie}" | jq -r '.file?')
+    local fps=$(echo "${movie}" | jq -r '.fps?')
 
     if [ -s "${input:-}" ]; then
-      local elapsed=$(jq -r '.elapsed' ${jsonfile})
-      local fps=$(echo "${movie}" | jq -r '.fps')
+      case ${format} in
+        gif)
+          if [ ${elapsed:-0} -gt 0 ]; then
+            local output=$(motion::ffmpeg_mp42gif "${input}" "${input%/*}/${id}.gif" ${fps:-5} ${elapsed} ${width:-640})
 
-      if [ ${elapsed:-0} -gt 0 ]; then
-        local id=$(jq -r '.id' ${jsonfile})
-        local output=$(motion_event_movie_convert "${input}" "${input%/*}/${id}.gif" ${fps:-5} ${elapsed} ${width:-640})
-
-        if [ "${output:-null}" != 'null' ]; then
-          result="${output}"
-        else
-          motion.log.error "${FUNCNAME[0]} no GIF output"
-        fi
-      else
-        motion.log.error "${FUNCNAME[0]} elapsed time invalid: ${elapsed}"
-      fi
+            if [ -s "${output}" ]; then
+              result="${output}"
+            else
+              motion.log.error "${FUNCNAME[0]} type: ${type}; format: ${format}; no output"
+            fi
+          else
+            motion.log.error "${FUNCNAME[0]} type: ${type}; format: ${format}; elapsed: zero (${elapsed})"
+          fi
+          ;;
+        *)
+          result=${input}
+          ;;
+      esac
     else
-      motion.log.error "${FUNCNAME[0]} no MP4 input: ${input}"
+      motion.log.error "${FUNCNAME[0]} json: ${jsonfile}; movie: ${movie}; input: ${input}; zero-length input"
     fi
   else
-    motion.log.warn "${FUNCNAME[0]} no movie specified; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
-  fi
-  echo "${result:-null}"
-}
-
-motion_event_animated_mask()
-{
-  motion.log.debug "${FUNCNAME[0]}" "${*}"
-
-  local result
-  local jsonfile="${1}"
-  local camera=$(jq -r '.camera' ${jsonfile})
-  local width=$(jq -r '.cameras[]|select(.name=="'${camera}'").width' $(motion.config.file))
-  local movie=$(jq '.mask' ${jsonfile})
-
-  if [ "${movie:-null}" != 'null' ]; then
-    local input=$(echo "${movie}" | jq -r '.file')
-
-    if [ -s "${input:-}" ]; then
-      local elapsed=$(jq -r '.elapsed' ${jsonfile})
-      local fps=$(echo "${movie}" | jq -r '.fps')
-
-      if [ ${elapsed:-0} -gt 0 ]; then
-        local id=$(jq -r '.id' ${jsonfile})
-        local output=$(motion_event_movie_convert "${input}" "${input%/*}/${id}.gif" ${fps:-5} ${elapsed} ${width:-640})
-
-        if [ "${output:-null}" != 'null' ]; then
-          result="${output}"
-        else
-          motion.log.error "${FUNCNAME[0]} no GIF output"
-        fi
-      else
-        motion.log.error "${FUNCNAME[0]} elapsed time invalid: ${elapsed}"
-      fi
-    else
-      motion.log.error "${FUNCNAME[0]} no MP4 input: ${input}"
-    fi
-  else
-    motion.log.warn "${FUNCNAME[0]} no movie specified; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+    motion.log.error "${FUNCNAME[0]} no ${type} video; metadata: $(jq -c ".${type}?" ${jsonfile})"
   fi
   echo "${result:-null}"
 }
 
 motion_event_images_differ()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local tmpdir=$(mktemp -d)
   local jpegs=(${*})
@@ -151,7 +120,7 @@ motion_event_images_differ()
 
 motion_event_images_average()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local jsonfile="${1}"
   local camera=$(jq -r '.camera' ${jsonfile})
@@ -189,7 +158,7 @@ motion_event_images_average()
 
 motion_event_json()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local cn="${1}"
@@ -241,7 +210,7 @@ motion_event_json()
 
 motion_event_images()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local jsonfile="${1}"
@@ -294,7 +263,7 @@ motion_event_images()
 
 motion_event_picture()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local jsonfile="${1}"
@@ -332,7 +301,7 @@ motion_event_picture()
 
 motion_event_append_picture()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local jsonfile="${1}"
@@ -364,7 +333,7 @@ motion_event_append_picture()
 
 motion_publish_event()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local jsonfile="${1}"
@@ -387,11 +356,13 @@ motion_publish_event()
 
 motion_publish_average()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local jsonfile="${1}"
   local jpgfile="${2}"
+    local camera=$(jq -r '.camera' ${jsonfile})
+    local device=$(jq -r '.device' ${jsonfile})
   local avgfile=$(motion_event_images_average ${jsonfile} ${jpgfile})
 
   if [ -s "${avgfile}" ]; then
@@ -403,35 +374,41 @@ motion_publish_average()
   echo "${result:-false}"
 }
 
-motion_publish_animated()
+function motion::publish_animated()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local jsonfile="${1}"
-  local giffile=$(motion_event_animated ${jsonfile})
+  local type="${2:-movie}"
+  local format="${3:-gif}"
+  local camera=$(jq -r '.camera?' ${jsonfile})
+  local device=$(jq -r '.device?' ${jsonfile})
+  local output=$(motion::event_animated "${jsonfile}" "${type}" "${format}")
 
-  if [ -s "${giffile}" ]; then
-    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${giffile}" || result=false
-    rm -f "${giffile}"
-    result='true'
-  else
-    motion.log.error "${FUNCNAME[0]} failed to calculate animated GIF; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
-  fi
-  echo "${result:-false}"
-}
+  if [ -s "${output}" ]; then
+    local movie_t
+    local mask_t
 
-motion_publish_animated_mask()
-{
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+    case ${format} in
+      gif)
+        movie_t="image-animated"
+        mask_t="image-animated-mask"
+        ;;
+      *)
+        movie_t="video"
+        mask_t="video-mask"
+        ;;
+    esac
 
-  local result
-  local jsonfile="${1}"
-  local giffile=$(motion_event_animated_mask ${jsonfile})
-
-  if [ -s "${giffile}" ]; then
-    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image-animated-mask" -f "${giffile}" || result=false
-    rm -f "${giffile}"
+    case ${type} in
+      movie)
+        motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/${movie_t}" -f "${output}" || result=false
+        ;;
+      mask)
+        motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/${mask_t}" -f "${output}" || result=false
+        ;;
+    esac
     result='true'
   else
     motion.log.error "${FUNCNAME[0]} failed to calculate animated GIF; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
@@ -441,11 +418,13 @@ motion_publish_animated_mask()
 
 motion_publish_annotated()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local jsonfile="${1}"
   local jpgfile="${2}"
+    local camera=$(jq -r '.camera' ${jsonfile})
+    local device=$(jq -r '.device' ${jsonfile})
   local annfile=$(motion_event_annotated ${jsonfile} ${jpgfile})
 
   if [ -s "${annfile}" ]; then
@@ -459,18 +438,19 @@ motion_publish_annotated()
 
 motion_publish_composite()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   echo "${result:-false}"
 }
 
-motion_event_process()
+function motion::event_process()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local jsonfile="${1}"
+  local format="${2:-gif}"
   local jpgfile=$(motion_event_picture ${jsonfile})
 
   # key frame
@@ -478,48 +458,45 @@ motion_event_process()
     local camera=$(jq -r '.camera' ${jsonfile})
     local device=$(jq -r '.device' ${jsonfile})
 
-    # publish JPEG to MQTT
-    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image/end" -f "${jpgfile}" || result=false
+    # add picture to event JSON
+    if [ "${result:-}" != 'false' ] && [ $(motion_event_append_picture ${jsonfile} ${jpgfile}) = 'true' ]; then
+      motion.log.debug "${FUNCNAME[0]} picture appended; from: motion_append_picture ${jsonfile}"
+
+      # publish JPEG to MQTT
+      motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image/end" -f "${jpgfile}" || result=false
+      motion.log.debug "${FUNCNAME[0]} published JPEG to MQTT; file: ${jpgfile}"
+    else
+      motion.log.error "${FUNCNAME[0]} failed append picture; metadata: $(jq -c '.' ${jsonfile})"
+      result=false
+    fi
+  
+    # add animated GIF
+    if [ "${result:-}" != 'false' ] && [ $(motion::publish_animated "${jsonfile}" "movie" "${format}") != 'true' ]; then
+      motion.log.error "${FUNCNAME[0]} format: ${format}; no output returned; from: motion::publish_animated ${jsonfile} movie"
+    fi
+  
+    # add animated mask GIF
+    if [ "${result:-}" != 'false' ] && [ $(motion::publish_animated "${jsonfile}" "mask" "${format}") != 'true' ]; then
+      motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion::publish_animated ${jsonfile} mask"
+    fi
+
+    # publish event JSON 
+    if [ "${result:-}" != 'false' ] && [ $(motion_publish_event ${jsonfile}) = 'true' ]; then
+      motion.log.debug "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+      result=true
+    else
+      motion.log.error "${FUNCNAME[0]} event failed to publish; metadata: $(jq -c '.' ${jsonfile})"
+    fi
   else
     motion.log.error "${FUNCNAME[0]} NO KEY FRAME: $(jq -c '.' ${jsonfile})"
     result='false'
-  fi
-
-  # add picture to event JSON
-  if [ "${result:-}" != 'false' ] && [ $(motion_event_append_picture ${jsonfile} ${jpgfile}) = 'true' ]; then
-    motion.log.debug "${FUNCNAME[0]} picture appended; from: motion_append_picture ${jsonfile}"
-  else
-    motion.log.error "${FUNCNAME[0]} failed append picture; metadata: $(jq -c '.' ${jsonfile})"
-    result=false
-  fi
-
-  # add animated GIF
-  if [ "${result:-}" != 'false' ] && [ $(motion_publish_animated "${jsonfile}") = 'true' ]; then
-    motion.log.debug "${FUNCNAME[0]} GIF returned; from: motion_publish_animated ${jsonfile}"
-  else
-    motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_publish_animated ${jsonfile}"
-  fi
-
-  # add animated_mask GIF
-  if [ "${result:-}" != 'false' ] && [ $(motion_publish_animated_mask "${jsonfile}") = 'true' ]; then
-    motion.log.debug "${FUNCNAME[0]} GIF returned; from: motion_publish_animated_mask ${jsonfile}"
-  else
-    motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_publish_animated_mask ${jsonfile}"
-  fi
-
-  # publish event JSON 
-  if [ "${result:-}" != 'false' ] && [ $(motion_publish_event ${jsonfile}) = 'true' ]; then
-    motion.log.debug "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
-    result=true
-  else
-    motion.log.error "${FUNCNAME[0]} event failed to publish; metadata: $(jq -c '.' ${jsonfile})"
   fi
   echo "${result:-false}"
 }
 
 motion_event_end()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local result
   local cn="${1}"
@@ -539,16 +516,16 @@ motion_event_end()
       local njpeg=$(motion_event_images ${jsonfile})
 
       if [ ${njpeg:-0} -eq 1 ]; then
-        # process single image event
-        if [ $(motion_event_process ${jsonfile}) != 'false' ]; then
-          motion.log.info "${FUNCNAME[0]} success: event: ${en}; camera: ${cn}; metadata: $(jq '.image=(.image!=null)' ${jsonfile})"
+        if [ $(motion::event_process ${jsonfile} $(motion.config.format)) != 'false' ]; then
+          motion.log.info "${FUNCNAME[0]} success: event: ${en}; camera: ${cn}; timestamp: ${ts}; metadata: $(jq '.image=(.image!=null)' ${jsonfile})"
           result='true'
         else
-          motion.log.error "${FUNCNAME[0]} failed: event: ${en}; camera: ${cn}; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+          motion.log.error "${FUNCNAME[0]} failed: event: ${en}; camera: ${cn}; timestamp: ${ts}; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
           result='false'
         fi
-      elif [ ${njpeg:-0} > 0 ]; then
-        motion.log.debug "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
+      elif [ ${njpeg:-0} -gt 0 ]; then
+        motion.log.info "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
+
         # process multi-image event with legacy code
         export MOTION_GROUP=$(motion.config.group) \
           MOTION_DEVICE=$(motion.config.device) \
@@ -566,10 +543,10 @@ motion_event_end()
         result='{"legacy":'$?'}'
         motion.log.debug "${FUNCNAME[0]} legacy result: ${result:-null}"
       else
-        motion.log.error "${FUNCNAME[0]} FAILURE: no images; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
+        motion.log.notice "${FUNCNAME[0]} no images; event: ${en}; camera: ${cn}; timestamp: ${ts}; metadata: $(jq -c '.' ${jsonfile})"
       fi
     else
-      motion.log.error "${FUNCNAME[0]} FAILURE: no metadata; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
+      motion.log.error "${FUNCNAME[0]} no metadata; event: ${en}; camera: ${cn}; timestamp: ${ts}"
     fi
   else
     motion.log.error "${FUNCNAME[0]} FAILURE: invalid arguments: ${*}"
@@ -592,26 +569,26 @@ motion_event_end()
 
 on_event_end()
 {
-  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   # close i/o
   # exec 0>&- # close stdin
   # exec 1>&- # close stdout
   # exec 2>&- =''# close stderr
 
-  while [ -e ${TMPFS:-/tmp}/${1} ]; do
+  local interval=$(jq -r '.motion.interval' $(motion.config.file))
 
-    local interval=$(jq -r '.motion.interval' $(motion.config.file))
+  if [ -e ${TMPFS:-/tmp}/${1} ]; then
+    motion.log.notice "${FUNCNAME[0]} camera in-process; event: ${*}; skipping"
+  else
+    touch ${TMPFS:-/tmp}/${1}
+    motion.log.info "${FUNCNAME[0]} begin; event: ${*}"
 
-    motion.log.warn "${FUNCNAME[0]} camera in-process; event: ${*}; waiting for ${interval} seconds"
-    sleep ${interval}
-  done
+    local result=$(motion_event_end ${*} | jq -c '.')
 
-  touch ${TMPFS:-/tmp}/${1}
-  motion.log.info "${FUNCNAME[0]} begin; event: ${*}"
-  local result=$(motion_event_end ${*} | jq -c '.')
-  motion.log.info "${FUNCNAME[0]} finish; event: ${*}; result: ${result}"
-  rm -f ${TMPFS:-/tmp}/${1}
+    motion.log.info "${FUNCNAME[0]} finish; event: ${*}; result: ${result}"
+    rm -f ${TMPFS:-/tmp}/${1}
+  fi
 }
 
 ###
