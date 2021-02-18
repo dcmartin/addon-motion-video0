@@ -13,7 +13,7 @@ log_file /tmp/motion.log
 log_level 6
 log_type all
 minimum_frame_time 0
-minimum_motion_frames 5
+minimum_motion_frames 10
 movie_codec mp4
 movie_filename %Y%m%d%H%M%S-%v
 movie_max_time 120

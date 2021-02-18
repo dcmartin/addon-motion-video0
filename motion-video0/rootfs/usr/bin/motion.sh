@@ -370,6 +370,12 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 bashio::log.debug "Set elevation to ${VALUE}"
 JSON="${JSON}"',"elevation":'"${VALUE}"
 
+# set format for events
+VALUE=$(jq -r '.format' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE='gif'; fi
+bashio::log.debug "Set format to ${VALUE}"
+JSON="${JSON}"',"format":"'"${VALUE}"'"'
+
 ##
 ## MQTT
 ##
@@ -659,7 +665,7 @@ bashio::log.debug "Set fov to ${VALUE}"
 
 # set minimum_motion_frames
 VALUE=$(jq -r ".default.minimum_motion_frames" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=10; fi
 sed -i "s/^minimum_motion_frames .*/minimum_motion_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
 bashio::log.debug "Set minimum_motion_frames to ${VALUE}"
