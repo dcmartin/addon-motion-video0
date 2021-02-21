@@ -1437,6 +1437,15 @@ bashio::log.info "Settting up notifywait for FTPD cameras"
 ftp_notifywait.sh "$(motion.config.file)"
 
 ###
+# start Apache
+###
+
+# make the options available to the apache client
+chmod go+rx /data /data/options.json
+start_apache_background ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
+bashio::log.notice "Started Apache on ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}"
+
+###
 ## start all motion daemons
 ###
 
@@ -1458,29 +1467,43 @@ for (( i = 1; i <= MOTION_COUNT;  i++)); do
   CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
 done
 
-# make the options available to the apache client
-chmod go+rx /data /data/options.json
+## started
+bashio::log.notice "Started ${#PID_FILES[@]} motion daemons"
 
-if [ ${#PID_FILES[@]} -le 0 ]; then
-  bashio::log.debug "STARTING APACHE in foreground; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
-  bashio::log.notice "Motion started; no motion daemons"
-  start_apache_foreground ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
-else 
-  bashio::log.debug "STARTING APACHE in background; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
-  start_apache_background ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
+## reload
+if [ $(bashio::config 'reload') = 'true' ]; then
+  # wait on Apache
+  date='null'; i=2; while [ ${date:-null} = 'null' ]; do
+    bashio::log.info "Option 'reload' is true; querying for ${i} seconds at ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}"
+    config=$(curl -sSL -m ${i} ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}/cgi-bin/config 2> /dev/null)
+    date=$(echo "${config}" | jq -r '.config.date')
+    if [ "${date:-null}" != 'null' ]; then
+      bashio::log.notice "Automatically rebuilding Lovelace and YAML"
+      pushd /config &> /dev/null
+      make --silent &> /dev/null
+      popd &> /dev/null
+      bashio::log.notice "Rebuild complete; restart Home Assistant"
+      break
+    fi
+    sleep ${i}
+    i=$((i+i))
+    if [ ${i:-0} -gt 30 ]; then
+      bashio::log.error "Automatic reload failed waiting on Apache; use Terminal and run 'make restart'"
+      break
+    fi
+  done
+fi
 
-  ## started
-  bashio::log.notice "Motion started; ${#PID_FILES[@]} motion daemons"
+## forever
+while true; do
 
-  ## forever
-  while true; do
     ## publish configuration
-    bashio::log.info "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
-    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)" \
-      || bashio::log.error "Unable to publish to MQTT"
+    ( motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)" \
+      && bashio::log.info "Published configuration to MQTT; topic: $(motion.config.group)/$(motion.config.device)/start" ) \
+      || bashio::log.error "Failed to publish configuration to MQTT; config: $(motion.config.mqtt)"
 
-    i=0
-    for PID_FILE in ${PID_FILES[@]}; do
+    ## check on daemons 
+    if [ ${#PID_FILES[@]} -gt 0 ]; then i=0; for PID_FILE in ${PID_FILES[@]}; do
       if [ ! -z "${PID_FILE:-}" ] && [ -s "${PID_FILE}" ]; then
         pid=$(cat ${PID_FILE})
         if [ "${pid:-null}" != 'null' ]; then
@@ -1503,10 +1526,10 @@ else
         bashio::log.error "No motion daemon PID file: ${PID_FILE}"
       fi
       i=$((i+1))
-    done
+    done; fi
 
-    bashio::log.info "watchdog sleeping; ${MOTION_WATCHDOG_INTERVAL:-1800} seconds ..."
+    ## sleep
+    bashio::log.info "Sleeping; ${MOTION_WATCHDOG_INTERVAL:-1800} seconds ..."
     sleep ${MOTION_WATCHDOG_INTERVAL:-1800}
 
-  done
-fi
+done
