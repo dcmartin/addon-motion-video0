@@ -70,7 +70,7 @@ function motion::reload()
         # update if cameras changed
         if [ -e /config/motion/config.json ]; then
           old=$(jq -c -S '.config.cameras' /config/motion/config.json)
-          new=$(echo "${config}" | jq -c -S '.config.cameras')
+          new=$(echo "${config}" | jq -c -S '.cameras')
 
           if [ "${old:-}" != "${new:-}" ]; then
             bashio::log.info "Cameras updated"
@@ -78,9 +78,22 @@ function motion::reload()
           fi
         fi
 
-        # check configuration (mqtt, group, device, client)
+
+        # check configuration (timezone, latitude, longitude, mqtt, group, device, client)
         if [ -e /config/setup.json ]; then
-          # host_timezone
+
+          # overview_apikey
+          old=$(jq -r '.MOTION_OVERVIEW_APKIEY' /config/setup.json)
+          new=$(bashio::config 'overview_apikey')
+          if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
+            jq -c '.MOTION_OVERVIEW_APIKEY="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
+            bashio::log.info "Updated MOTION_OVERVIEW_APIKEY: ${new}; old: ${old}"
+            update='true'
+          else
+            bashio::log.debug "${FUNCNAME[0]} no change HOST_TIMEZONE: ${old}; new: ${new}"
+          fi
+
+          # timezone
           old=$(jq -r '.HOST_TIMEZONE' /config/setup.json)
           new=$(bashio::config 'timezone')
           if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
@@ -90,7 +103,8 @@ function motion::reload()
           else
             bashio::log.debug "${FUNCNAME[0]} no change HOST_TIMEZONE: ${old}; new: ${new}"
           fi
-          # host_latitude
+
+          # latitude
           old=$(jq -r '.HOST_LATITUDE' /config/setup.json)
           new=$(bashio::config 'latitude')
           if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
@@ -100,7 +114,7 @@ function motion::reload()
           else
             bashio::log.debug "${FUNCNAME[0]} no change HOST_LATITUDE: ${old}; new: ${new}"
           fi
-          # host_longitude
+          # longitude
           old=$(jq -r '.HOST_LONGITUDE' /config/setup.json)
           new=$(bashio::config 'longitude')
           if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
@@ -113,7 +127,7 @@ function motion::reload()
 
           # mqtt host
           old=$(jq -r '.MQTT_HOST' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.config.mqtt.host')
+          new=$(echo "${config}" | jq -r '.mqtt.host')
           if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
             jq -c '.MQTT_HOST="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
             bashio::log.info "Updated MQTT_HOST: ${new}"
@@ -123,7 +137,7 @@ function motion::reload()
           fi
           # mqtt port
           old=$(jq -r '.MQTT_PORT' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.config.mqtt.port')
+          new=$(echo "${config}" | jq -r '.mqtt.port')
           if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
             jq -c '.MQTT_PORT="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
             bashio::log.info "Updated MQTT_PORT: ${new}"
@@ -133,7 +147,7 @@ function motion::reload()
           fi
           # mqtt username
           old=$(jq -r '.MQTT_USERNAME' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.config.mqtt.username')
+          new=$(echo "${config}" | jq -r '.mqtt.username')
           if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
             jq -c '.MQTT_USERNAME="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
             bashio::log.info "Updated MQTT_USERNAME: ${new}"
@@ -143,7 +157,7 @@ function motion::reload()
           fi
           # mqtt password
           old=$(jq -r '.MQTT_PASSWORD' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.config.mqtt.password')
+          new=$(echo "${config}" | jq -r '.mqtt.password')
           if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
             jq -c '.MQTT_PASSWORD="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
             bashio::log.info "Updated MQTT_PASSWORD: ${new}"
@@ -153,7 +167,7 @@ function motion::reload()
           fi
           # motion_group
           old=$(jq -r '.MOTION_GROUP' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.config.group')
+          new=$(echo "${config}" | jq -r '.group')
           if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
             jq -c '.MOTION_GROUP="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
             bashio::log.info "Updated MOTION_GROUP: ${new}"
@@ -163,7 +177,7 @@ function motion::reload()
           fi
           # motion_device
           old=$(jq -r '.MOTION_DEVICE' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.config.device')
+          new=$(echo "${config}" | jq -r '.device')
           if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
             jq -c '.MOTION_DEVICE="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
             bashio::log.info "Updated MOTION_DEVICE: ${new}"
@@ -173,7 +187,7 @@ function motion::reload()
           fi
           # motion_client
           old=$(jq -r '.MOTION_CLIENT' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.config.client')
+          new=$(echo "${config}" | jq -r '.client')
           if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
             jq -c '.MOTION_CLIENT="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
             bashio::log.info "Updated MOTION_CLIENT: ${new}"
