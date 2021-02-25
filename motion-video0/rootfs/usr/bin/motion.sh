@@ -48,19 +48,42 @@ fi
 ## FUNCTIONS
 ###
 
+## updateSetup
+function motion::setup.update()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local c="${1:-}"
+  local e="${2:-}"
+  local update
+
+  old=$(jq -r '.'"${e}"'?' /config/setup.json)
+  new=$(bashio::config "${c}")
+
+  if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
+    jq -c '.'"${e}"'="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
+    bashio::log.info "Updated ${e}: ${new}; old: ${old}"
+    update=1
+  else
+    bashio::log.debug "${FUNCNAME[0]} no change ${e}: ${old}; new: ${new}"
+  fi
+  echo ${update:-0}
+}
+
 ## reload
 function motion::reload()
 {
   bashio::log.trace "${FUNCNAME[0]} ${*}"
 
   if [ $(bashio::config 'reload') = 'true' ]; then
-    local update='false'
+    local update=0
     local date='null'
     local i=2
     local old
     local new
+    local tf
 
-    while [ ${date:-null} = 'null' ]; do
+    while true; do
       bashio::log.notice "Option 'reload' is true; querying for ${i} seconds at ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}"
       local config=$(curl -sSL -m ${i} ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}/cgi-bin/config 2> /dev/null)
 
@@ -74,129 +97,67 @@ function motion::reload()
 
           if [ "${old:-}" != "${new:-}" ]; then
             bashio::log.info "Cameras updated"
-            update='true'
+            update=$((update+1))
           fi
         fi
-
 
         # check configuration (timezone, latitude, longitude, mqtt, group, device, client)
         if [ -e /config/setup.json ]; then
-
-          # overview_apikey
-          old=$(jq -r '.MOTION_OVERVIEW_APKIEY' /config/setup.json)
-          new=$(bashio::config 'overview_apikey')
-          if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.MOTION_OVERVIEW_APIKEY="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated MOTION_OVERVIEW_APIKEY: ${new}; old: ${old}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change HOST_TIMEZONE: ${old}; new: ${new}"
-          fi
-
-          # timezone
-          old=$(jq -r '.HOST_TIMEZONE' /config/setup.json)
-          new=$(bashio::config 'timezone')
-          if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.HOST_TIMEZONE="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated HOST_TIMEZONE: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change HOST_TIMEZONE: ${old}; new: ${new}"
-          fi
-
-          # latitude
-          old=$(jq -r '.HOST_LATITUDE' /config/setup.json)
-          new=$(bashio::config 'latitude')
-          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.HOST_LATITUDE="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated HOST_LATITUDE: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change HOST_LATITUDE: ${old}; new: ${new}"
-          fi
-          # longitude
-          old=$(jq -r '.HOST_LONGITUDE' /config/setup.json)
-          new=$(bashio::config 'longitude')
-          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.HOST_LONGITUDE="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated HOST_LONGITUDE: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change HOST_LONGITUDE: ${old}; new: ${new}"
-          fi
-
-          # mqtt host
-          old=$(jq -r '.MQTT_HOST' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.mqtt.host')
-          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.MQTT_HOST="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated MQTT_HOST: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change MQTT_HOST: ${old}; new: ${new}"
-          fi
-          # mqtt port
-          old=$(jq -r '.MQTT_PORT' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.mqtt.port')
-          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.MQTT_PORT="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated MQTT_PORT: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change MQTT_PORT: ${old}; new: ${new}"
-          fi
-          # mqtt username
-          old=$(jq -r '.MQTT_USERNAME' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.mqtt.username')
-          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.MQTT_USERNAME="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated MQTT_USERNAME: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change MQTT_USERNAME: ${old}; new: ${new}"
-          fi
-          # mqtt password
-          old=$(jq -r '.MQTT_PASSWORD' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.mqtt.password')
-          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.MQTT_PASSWORD="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated MQTT_PASSWORD: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change MQTT_PASSWORD: ${old}; new: ${new}"
-          fi
-          # motion_group
-          old=$(jq -r '.MOTION_GROUP' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.group')
-          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.MOTION_GROUP="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated MOTION_GROUP: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change MOTION_GROUP: ${old}; new: ${new}"
-          fi
-          # motion_device
-          old=$(jq -r '.MOTION_DEVICE' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.device')
-          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.MOTION_DEVICE="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated MOTION_DEVICE: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change MOTION_DEVICE: ${old}; new: ${new}"
-          fi
-          # motion_client
-          old=$(jq -r '.MOTION_CLIENT' /config/setup.json)
-          new=$(echo "${config}" | jq -r '.client')
-          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
-            jq -c '.MOTION_CLIENT="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-            bashio::log.info "Updated MOTION_CLIENT: ${new}"
-            update='true'
-          else
-            bashio::log.debug "${FUNCNAME[0]} no change MOTION_CLIENT: ${old}; new: ${new}"
-          fi
+          # host
+          tf=$(motion::setup.update 'interface' 'HOST_INTERFACE') && update=$((update+tf))
+          tf=$(motion::setup.update 'ipaddr' 'HOST_IPADDR') && update=$((update+tf))
+          tf=$(motion::setup.update 'timezone' 'HOST_TIMEZONE') && update=$((update+tf))
+          tf=$(motion::setup.update 'latitude' 'HOST_LATITUDE') && update=$((update+tf))
+          tf=$(motion::setup.update 'longitude' 'HOST_LONGITUDE') && update=$((update+tf))
+          # mqtt
+          tf=$(motion::setup.update 'mqtt.host' 'MQTT_HOST') && update=$((update+tf))
+          tf=$(motion::setup.update 'mqtt.password' 'MQTT_PASSWORD') && update=$((update+tf))
+          tf=$(motion::setup.update 'mqtt.port' 'MQTT_PORT') && update=$((update+tf))
+          tf=$(motion::setup.update 'mqtt.username' 'MQTT_USERNAME') && update=$((update+tf))
+          # motion
+          tf=$(motion::setup.update 'group' 'MOTION_GROUP') && update=$((update+tf))
+          tf=$(motion::setup.update 'device' 'MOTION_DEVICE') && update=$((update+tf))
+          tf=$(motion::setup.update 'client' 'MOTION_CLIENT') && update=$((update+tf))
+          # overview
+          tf=$(motion::setup.update 'overview.apikey' 'MOTION_OVERVIEW_APKIEY') && update=$((update+tf))
+          tf=$(motion::setup.update 'overview.image' 'MOTION_OVERVIEW_IMAGE') && update=$((update+tf))
+          tf=$(motion::setup.update 'overview.mode' 'MOTION_OVERVIEW_MODE') && update=$((update+tf))
+          tf=$(motion::setup.update 'overview.zoom' 'MOTION_OVERVIEW_ZOOM') && update=$((update+tf))
+          # yolo
+          tf=$(motion::setup.update 'yolo.config' 'MOTION_YOLO_CONFIG') && update=$((update+tf))
+          tf=$(motion::setup.update 'yolo.ip' 'MOTION_YOLO_IP') && update=$((update+tf))
+          # detected.entity
+          tf=$(motion::setup.update 'entity.name' 'MOTION_DETECTED_ENTITY') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.ago' 'MOTION_DETECTED_ENTITY_AGO') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.deviation' 'MOTION_DETECTED_ENTITY_DEVIATION') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.notify' 'MOTION_DETECTED_ENTITY_NOTIFY') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.speak' 'MOTION_DETECTED_ENTITY_SPEAK') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.tune' 'MOTION_DETECTED_ENTITY_TUNE') && update=$((update+tf))
+          # detected.person
+          tf=$(motion::setup.update 'person.entity' 'MOTION_DETECTED_PERSON_ENTITY') && update=$((update+tf))
+          tf=$(motion::setup.update 'person.ago' 'MOTION_DETECTED_PERSON_AGO') && update=$((update+tf))
+          tf=$(motion::setup.update 'person.deviation' 'MOTION_DETECTED_PERSON_DEVIATION') && update=$((update+tf))
+          tf=$(motion::setup.update 'person.notify' 'MOTION_DETECTED_PERSON_NOTIFY') && update=$((update+tf))
+          tf=$(motion::setup.update 'person.speak' 'MOTION_DETECTED_PERSON_SPEAK') && update=$((update+tf))
+          tf=$(motion::setup.update 'person.tune' 'MOTION_DETECTED_PERSON_TUNE') && update=$((update+tf))
+          # detected.vehicle
+          tf=$(motion::setup.update 'vehicle.entity' 'MOTION_DETECTED_VEHICLE_ENTITY') && update=$((update+tf))
+          tf=$(motion::setup.update 'vehicle.ago' 'MOTION_DETECTED_VEHICLE_AGO') && update=$((update+tf))
+          tf=$(motion::setup.update 'vehicle.deviation' 'MOTION_DETECTED_VEHICLE_DEVIATION') && update=$((update+tf))
+          tf=$(motion::setup.update 'vehicle.notify' 'MOTION_DETECTED_VEHICLE_NOTIFY') && update=$((update+tf))
+          tf=$(motion::setup.update 'vehicle.speak' 'MOTION_DETECTED_VEHICLE_SPEAK') && update=$((update+tf))
+          tf=$(motion::setup.update 'vehicle.tune' 'MOTION_DETECTED_VEHICLE_TUNE') && update=$((update+tf))
+          # detected.animal
+          tf=$(motion::setup.update 'animal.entity' 'MOTION_DETECTED_ANIMAL_ENTITY') && update=$((update+tf))
+          tf=$(motion::setup.update 'animal.ago' 'MOTION_DETECTED_ANIMAL_AGO') && update=$((update+tf))
+          tf=$(motion::setup.update 'animal.deviation' 'MOTION_DETECTED_ANIMAL_DEVIATION') && update=$((update+tf))
+          tf=$(motion::setup.update 'animal.notify' 'MOTION_DETECTED_ANIMAL_NOTIFY') && update=$((update+tf))
+          tf=$(motion::setup.update 'animal.speak' 'MOTION_DETECTED_ANIMAL_SPEAK') && update=$((update+tf))
+          tf=$(motion::setup.update 'animal.tune' 'MOTION_DETECTED_ANIMAL_TUNE') && update=$((update+tf))
         fi
-        if [ ${update:-false} = 'true' ]; then
+
+        # test if update
+        if [ ${update:-0} -gt 0 ]; then
           bashio::log.notice "Automatically rebuilding Lovelace and YAML"
           pushd /config &> /dev/null
           make --silent &> /dev/null
@@ -207,9 +168,12 @@ function motion::reload()
         fi
         break
       fi
+
+      # no config; try again
       sleep ${i}
       i=$((i+i))
       if [ ${i:-0} -gt 30 ]; then
+        # up to a limit
         bashio::log.error "Automatic reload failed waiting on Apache; use Terminal and run 'make restart'"
         break
       fi
@@ -231,7 +195,7 @@ start_apache_background()
 
 start_apache()
 {
-  bashio::log.trace "${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
 
   local foreground=${1}; shift
 
