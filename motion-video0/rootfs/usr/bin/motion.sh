@@ -118,8 +118,11 @@ function motion::reload()
           tf=$(motion::setup.update 'group' 'MOTION_GROUP') && update=$((update+tf))
           tf=$(motion::setup.update 'device' 'MOTION_DEVICE') && update=$((update+tf))
           tf=$(motion::setup.update 'client' 'MOTION_CLIENT') && update=$((update+tf))
+          # media
+          tf=$(motion::setup.update 'media.save' 'MOTION_MEDIA_SAVE') && update=$((update+tf))
+          tf=$(motion::setup.update 'media.mask' 'MOTION_MEDIA_MASK') && update=$((update+tf))
           # overview
-          tf=$(motion::setup.update 'overview.apikey' 'MOTION_OVERVIEW_APKIEY') && update=$((update+tf))
+          tf=$(motion::setup.update 'overview.apikey' 'MOTION_OVERVIEW_APIKEY') && update=$((update+tf))
           tf=$(motion::setup.update 'overview.image' 'MOTION_OVERVIEW_IMAGE') && update=$((update+tf))
           tf=$(motion::setup.update 'overview.mode' 'MOTION_OVERVIEW_MODE') && update=$((update+tf))
           tf=$(motion::setup.update 'overview.zoom' 'MOTION_OVERVIEW_ZOOM') && update=$((update+tf))
