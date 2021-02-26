@@ -61,7 +61,7 @@ function motion::setup.update()
   new=$(bashio::config "${c}")
 
   if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
-    jq -c '.timestamp='$(date -u '+%FT%TZ')'|.'"${e}"'="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
+    jq -c '.timestamp="'$(date -u '+%FT%TZ')'"|.'"${e}"'="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
     bashio::log.info "Updated ${e}: ${new}; old: ${old}"
     update=1
   else
@@ -132,7 +132,7 @@ function motion::reload()
           tf=$(motion::setup.update 'yolo.config' 'MOTION_YOLO_CONFIG') && update=$((update+tf))
           tf=$(motion::setup.update 'yolo.ip' 'MOTION_YOLO_IP') && update=$((update+tf))
           # detected.entity
-          tf=$(motion::setup.update 'entity.name' 'MOTION_DETECTED_ENTITY') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.name' 'MOTION_DETECT_ENTITY') && update=$((update+tf))
           tf=$(motion::setup.update 'entity.ago' 'MOTION_DETECTED_ENTITY_AGO') && update=$((update+tf))
           tf=$(motion::setup.update 'entity.deviation' 'MOTION_DETECTED_ENTITY_DEVIATION') && update=$((update+tf))
           tf=$(motion::setup.update 'entity.notify' 'MOTION_DETECTED_ENTITY_NOTIFY') && update=$((update+tf))
