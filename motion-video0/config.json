@@ -46,6 +46,7 @@
     "overview": {},
     "entity": {},
     "person": {},
+    "media": {},
     "vehicle": {},
     "animal": {},
     "cameras": [
@@ -116,6 +117,7 @@
         "stream_maxrate": "int(2,100)?",
         "stream_motion": "list(on|off)?",
         "stream_quality": "int(10,100)?",
+        "router_name": "str?",
         "text_scale": "int(1,10)?",
         "threshold": "int?",
         "threshold_maximum": "int?",
@@ -199,7 +201,11 @@
       "notify": "bool?",
       "speak": "bool?",
       "ago": "int(30,300)?",
-      "deviation": "float(0.5,6.0)?"
+      "deviation": "float(0.1,6.0)?"
+    },
+    "media": {
+      "save": "bool?",
+      "mask": "bool?"
     },
     "person": {
       "entity": "str?",
@@ -207,7 +213,7 @@
       "notify": "bool?",
       "speak": "bool?",
       "ago": "int(30,300)?",
-      "deviation": "float(0.5,6.0)?"
+      "deviation": "float(0.1,6.0)?"
     },
     "vehicle": {
       "entity": "str?",
@@ -215,7 +221,7 @@
       "notify": "bool?",
       "speak": "bool?",
       "ago": "int(30,300)?",
-      "deviation": "float(0.5,6.0)?"
+      "deviation": "float(0.1,6.0)?"
     },
     "animal": {
       "entity": "str?",
@@ -223,7 +229,7 @@
       "notify": "bool?",
       "speak": "bool?",
       "ago": "int(30,300)?",
-      "deviation": "float(0.5,6.0)?"
+      "deviation": "float(0.1,6.0)?"
     },
     "overview": {
       "apikey": "str?",
@@ -239,7 +245,7 @@
   "timeout": 90,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.10.120",
+  "version": "0.10.122",
   "video": true,
   "watchdog": "http://[HOST]:[PORT:7999]/cgi-bin/config",
   "webui": "http://[HOST]:[PORT:7999]/"

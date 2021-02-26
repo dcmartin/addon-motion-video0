@@ -61,7 +61,7 @@ function motion::setup.update()
   new=$(bashio::config "${c}")
 
   if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
-    jq -c '.'"${e}"'="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
+    jq -c '.timestamp='$(date -u '+%FT%TZ')'|.'"${e}"'="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
     bashio::log.info "Updated ${e}: ${new}; old: ${old}"
     update=1
   else
@@ -89,7 +89,7 @@ function motion::reload()
 
       config=$(echo "${config}" | jq '.config?')
       if [ "${config:-null}" != 'null' ]; then
-
++
         # update if cameras changed
         if [ -e /config/motion/config.json ]; then
           old=$(jq -c -S '.config.cameras' /config/motion/config.json)
@@ -103,6 +103,8 @@ function motion::reload()
 
         # check configuration (timezone, latitude, longitude, mqtt, group, device, client)
         if [ -e /config/setup.json ]; then
+          # router
+          tf=$(motion::setup.update 'router_name' 'MOTION_ROUTER_NAME') && update=$((update+tf))
           # host
           tf=$(motion::setup.update 'interface' 'HOST_INTERFACE') && update=$((update+tf))
           tf=$(motion::setup.update 'ipaddr' 'HOST_IPADDR') && update=$((update+tf))
