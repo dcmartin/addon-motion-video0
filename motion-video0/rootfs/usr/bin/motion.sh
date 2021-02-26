@@ -89,7 +89,7 @@ function motion::reload()
 
       config=$(echo "${config}" | jq '.config?')
       if [ "${config:-null}" != 'null' ]; then
-+
+
         # update if cameras changed
         if [ -e /config/motion/config.json ]; then
           old=$(jq -c -S '.config.cameras' /config/motion/config.json)
