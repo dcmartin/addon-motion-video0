@@ -85,7 +85,7 @@ function motion::reload()
 
     while true; do
       bashio::log.notice "Option 'reload' is true; querying for ${i} seconds at ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}"
-      local config=$(curl -sSL -m ${i} ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}/cgi-bin/config 2> /dev/null)
+      local config=$(curl -sSL -m ${i} ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}/cgi-bin/config 2> /dev/null || true)
 
       config=$(echo "${config}" | jq '.config?')
       if [ "${config:-null}" != 'null' ]; then
@@ -95,7 +95,7 @@ function motion::reload()
           old=$(jq -c -S '.config.cameras' /config/motion/config.json)
           new=$(echo "${config}" | jq -c -S '.cameras')
 
-          if [ "${old:-}" != "${new:-}" ]; then
+          if [ "${new:-null}" != 'null' ] && [ "${old:-}" != "${new:-}" ]; then
             bashio::log.info "Cameras updated"
             update=$((update+1))
           fi
@@ -165,6 +165,7 @@ function motion::reload()
         if [ ${update:-0} -gt 0 ]; then
           bashio::log.notice "Automatically rebuilding Lovelace and YAML"
           pushd /config &> /dev/null
+          make tidy --silent &> /dev/null
           make --silent &> /dev/null
           popd &> /dev/null
           bashio::log.notice "Rebuild complete; restart Home Assistant"

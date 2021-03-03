@@ -12,6 +12,8 @@ ftp_notifywait()
 
   local cameras=$(motion.config.cameras)
 
+  if [ "${cameras:-null}" != 'null' ] && [ $(echo "${cameras:-null}" | jq '.|length') -gt 0 ]; then
+
   for name in $(echo "${cameras}" | jq -r '.[]|.name'); do
     local type=$(echo "${cameras}" | jq -r '.[]|select(.name=="'"${name}"'").type')
 
@@ -40,6 +42,8 @@ ftp_notifywait()
       on_camera_found.sh ${name} $($dateconv -f '%Y %m %d %H %M %S' -i "%s" $(date -u '+%s'))
     fi
   done
+
+  fi
 }
 
 ###
