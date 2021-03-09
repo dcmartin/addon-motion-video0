@@ -103,6 +103,11 @@ function motion::reload()
 
         # check configuration (timezone, latitude, longitude, mqtt, group, device, client)
         if [ -e /config/setup.json ]; then
+          # ww3
+          tf=$(motion::setup.update 'w3w.apikey' 'MOTION_W3W_APIKEY') && update=$((update+tf))
+          tf=$(motion::setup.update 'w3w.email' 'MOTION_W3W_EMAIL') && update=$((update+tf))
+          # camera_restart
+          tf=$(motion::setup.update 'camera_restart' 'MOTION_CAMERA_RESTART') && update=$((update+tf))
           # router
           tf=$(motion::setup.update 'router_name' 'MOTION_ROUTER_NAME') && update=$((update+tf))
           # host
@@ -131,13 +136,8 @@ function motion::reload()
           # yolo
           tf=$(motion::setup.update 'yolo.config' 'MOTION_YOLO_CONFIG') && update=$((update+tf))
           tf=$(motion::setup.update 'yolo.ip' 'MOTION_YOLO_IP') && update=$((update+tf))
-          # detected.entity
-          tf=$(motion::setup.update 'entity.name' 'MOTION_DETECT_ENTITY') && update=$((update+tf))
-          tf=$(motion::setup.update 'entity.ago' 'MOTION_DETECTED_ENTITY_AGO') && update=$((update+tf))
-          tf=$(motion::setup.update 'entity.deviation' 'MOTION_DETECTED_ENTITY_DEVIATION') && update=$((update+tf))
-          tf=$(motion::setup.update 'entity.notify' 'MOTION_DETECTED_ENTITY_NOTIFY') && update=$((update+tf))
-          tf=$(motion::setup.update 'entity.speak' 'MOTION_DETECTED_ENTITY_SPEAK') && update=$((update+tf))
-          tf=$(motion::setup.update 'entity.tune' 'MOTION_DETECTED_ENTITY_TUNE') && update=$((update+tf))
+          # USER
+          tf=$(motion::setup.update 'person.user' 'MOTION_USER') && update=$((update+tf))
           # detected.person
           tf=$(motion::setup.update 'person.entity' 'MOTION_DETECTED_PERSON_ENTITY') && update=$((update+tf))
           tf=$(motion::setup.update 'person.ago' 'MOTION_DETECTED_PERSON_AGO') && update=$((update+tf))
@@ -159,6 +159,13 @@ function motion::reload()
           tf=$(motion::setup.update 'animal.notify' 'MOTION_DETECTED_ANIMAL_NOTIFY') && update=$((update+tf))
           tf=$(motion::setup.update 'animal.speak' 'MOTION_DETECTED_ANIMAL_SPEAK') && update=$((update+tf))
           tf=$(motion::setup.update 'animal.tune' 'MOTION_DETECTED_ANIMAL_TUNE') && update=$((update+tf))
+          # detected.entity
+          tf=$(motion::setup.update 'entity.name' 'MOTION_DETECT_ENTITY') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.ago' 'MOTION_DETECTED_ENTITY_AGO') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.deviation' 'MOTION_DETECTED_ENTITY_DEVIATION') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.notify' 'MOTION_DETECTED_ENTITY_NOTIFY') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.speak' 'MOTION_DETECTED_ENTITY_SPEAK') && update=$((update+tf))
+          tf=$(motion::setup.update 'entity.tune' 'MOTION_DETECTED_ENTITY_TUNE') && update=$((update+tf))
         fi
 
         # test if update
