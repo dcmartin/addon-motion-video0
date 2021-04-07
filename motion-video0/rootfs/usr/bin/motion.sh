@@ -1268,6 +1268,7 @@ for (( i=0; i < ncamera; i++)); do
         if [ "${VALUE:-null}" = 'null' ]; then
           VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
           if [ "${VALUE}" != "null" ] || [ ! -z "${VALUE}" ]; then
+            VALUE=$(echo "${VALUE}" | sed 's|mjpeg://|http://|')
             CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
 	  else
             bashio::log.warn "Camera: ${CNAME}; both mjpeg_url and netcam_url are undefined; no live stream"
