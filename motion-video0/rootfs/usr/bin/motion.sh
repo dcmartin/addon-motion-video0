@@ -450,7 +450,7 @@ JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'${ipaddr}'","hostname":"'"$
 VALUE=$(jq -r ".device" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE="$(hostname -s)"
-  bashio::log.warn "device unspecifieid; setting device: ${VALUE}"
+  bashio::log.warning "device unspecified; setting device: ${VALUE}"
 fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
 bashio::log.info "MOTION_DEVICE: ${VALUE}"
@@ -460,7 +460,7 @@ MOTION_DEVICE="${VALUE}"
 VALUE=$(jq -r ".group" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE="motion"
-  bashio::log.warn "group unspecifieid; setting group: ${VALUE}"
+  bashio::log.warning "group unspecified; setting group: ${VALUE}"
 fi
 JSON="${JSON}"',"group":"'"${VALUE}"'"'
 bashio::log.info "MOTION_GROUP: ${VALUE}"
@@ -470,7 +470,7 @@ MOTION_GROUP="${VALUE}"
 VALUE=$(jq -r ".client" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE="+"
-  bashio::log.warn "client unspecifieid; setting client: ${VALUE}"
+  bashio::log.warning "client unspecified; setting client: ${VALUE}"
 fi
 JSON="${JSON}"',"client":"'"${VALUE}"'"'
 bashio::log.info "MOTION_CLIENT: ${VALUE}"
@@ -481,7 +481,7 @@ VALUE=$(jq -r ".timezone" "${CONFIG_PATH}")
 # Set the correct timezone
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE="GMT"
-  bashio::log.warn "timezone unspecified; defaulting to ${VALUE}"
+  bashio::log.warning "timezone unspecified; defaulting to ${VALUE}"
 else
   bashio::log.info "TIMEZONE: ${VALUE}"
 fi
@@ -692,7 +692,7 @@ esac
 VALUE=$(jq -r ".default.picture_output" "${CONFIG_PATH}")
 if [ "${VALUE:-}" != 'null' ] && [ ! -z "${VALUE:-}" ]; then
   if [ "${VALUE}" != "${SPEC}" ]; then
-    bashio::log.warn "picture_output; specified ${VALUE} does not match expected: ${SPEC}"
+    bashio::log.warning "picture_output; specified ${VALUE} does not match expected: ${SPEC}"
   else
     bashio::log.debug "picture_output; specified ${VALUE} matches expected: ${SPEC}"
   fi
@@ -717,7 +717,7 @@ else
   else
     case ${VALUE} in
       '3gp')
-        bashio::log.warn "movie_output: video type ${VALUE}; ensure camera type: ftpd"
+        bashio::log.warning "movie_output: video type ${VALUE}; ensure camera type: ftpd"
         MOTION_VIDEO_CODEC="${VALUE}"
         VALUE='off'
       ;;
@@ -727,7 +727,7 @@ else
         VALUE='on'
       ;;
       'mpeg4'|'swf'|'flv'|'ffv1'|'mov'|'mkv'|'hevc')
-        bashio::log.warn "movie_output: unsupported option: ${VALUE}"
+        bashio::log.warning "movie_output: unsupported option: ${VALUE}"
         MOTION_VIDEO_CODEC="${VALUE}"
         VALUE='on'
       ;;
@@ -1271,7 +1271,7 @@ for (( i=0; i < ncamera; i++)); do
             VALUE=$(echo "${VALUE}" | sed 's|mjpeg://|http://|')
             CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
 	  else
-            bashio::log.warn "Camera: ${CNAME}; both mjpeg_url and netcam_url are undefined; no live stream"
+            bashio::log.warning "Camera: ${CNAME}; both mjpeg_url and netcam_url are undefined; no live stream"
 	    VALUE=''
           fi
         fi
@@ -1636,7 +1636,7 @@ while true; do
         if [ "${pid:-null}" != 'null' ]; then
           found=$(ps alxwww | grep 'motion -b' | awk '{ print $1 }' | egrep ${pid} || true)
           if [ -z "${found:-}" ]; then
-            bashio::log.warn "Daemon with PID: ${pid} is not found; restarting"
+            bashio::log.warning "Daemon with PID: ${pid} is not found; restarting"
             if [ ${i} -gt 0 ]; then
               CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
             else
