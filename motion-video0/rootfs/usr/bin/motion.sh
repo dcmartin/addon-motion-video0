@@ -1340,16 +1340,13 @@ for (( i=0; i < ncamera; i++)); do
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; fi
       VALUE=$((VALUE + MOTION_COUNT))
       sed -i "s/^stream_port .*/stream_port ${VALUE}/" "${MOTION_CONF}"
-      MOTION_STREAM_PORT=${VALUE}
-      bashio::log.debug "Configuration: ${MOTION_CONF}; set stream port: ${MOTION_STREAM_PORT}"
+      bashio::log.debug "Configuration ${MOTION_COUNT}: ${MOTION_CONF}; set stream port: ${VALUE}"
 
       # set webcontrol_port
       VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
       VALUE=$((VALUE + MOTION_COUNT))
       sed -i "s/^webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
-
-      # increment
       bashio::log.debug "Configuration ${MOTION_COUNT}: ${MOTION_CONF}; set control port: ${VALUE}"
 
       MOTION_COUNT=$((MOTION_COUNT + 1))
