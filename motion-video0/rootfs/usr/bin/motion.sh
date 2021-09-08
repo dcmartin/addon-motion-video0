@@ -1376,7 +1376,7 @@ for (( i=0; i < ncamera; i++)); do
   VALUE=$(jq -r '.cameras['${i}'].mjpeg_url' "${CONFIG_PATH}")
   if [ "${VALUE:-null}" = 'null' ]; then
     # calculate mjpeg_url for camera
-    VALUE="http://${ipaddr}:${MOTION_STREAM_PORT}/${CNUM}"
+    VALUE="http://${ipaddr}:$((MOTION_STREAM_PORT+MOTION_COUNT-1))/${CNUM}"
   fi
   bashio::log.debug "Set mjpeg_url to ${VALUE}"
   CAMERAS="${CAMERAS}"',"mjpeg_url":"'${VALUE}'"'
