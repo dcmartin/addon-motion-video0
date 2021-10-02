@@ -105,9 +105,12 @@ function motion::reload()
         if [ -e /config/setup.json ]; then
           # ww3
           tf=$(motion::setup.update 'w3w.apikey' 'MOTION_W3W_APIKEY') && update=$((update+tf))
+          tf=$(motion::setup.update 'w3w.words' 'MOTION_W3W_WORDS') && update=$((update+tf))
           tf=$(motion::setup.update 'w3w.email' 'MOTION_W3W_EMAIL') && update=$((update+tf))
           # camera_restart
           tf=$(motion::setup.update 'camera_restart' 'MOTION_CAMERA_RESTART') && update=$((update+tf))
+          # camera_any
+          tf=$(motion::setup.update 'camera_any' 'MOTION_CAMERA_ANY') && update=$((update+tf))
           # router
           tf=$(motion::setup.update 'router_name' 'MOTION_ROUTER_NAME') && update=$((update+tf))
           # host
@@ -1279,14 +1282,18 @@ for (( i=0; i < ncamera; i++)); do
         CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
         url=${VALUE}
 
-        # addon_api
-        if [ "${CAMERA_TYPE}" != 'ftpd' ]; then
-          VALUE="${VALUE##*//}" && VALUE=${VALUE%%/*} && VALUE=${VALUE%%:*} && VALUE="http://${VALUE}:${MOTION_APACHE_PORT}"
+        # addon_api (uses ${url} from above)
+        VALUE=$(jq -r '.cameras['${i}'].addon_api' "${CONFIG_PATH}")
+        if [ -z "${VALUE:-}" ] && [ "${CAMERA_TYPE}" != 'ftpd' ]; then
+          VALUE="${url##*//}" && VALUE=${VALUE%%/*} && VALUE=${VALUE%%:*} && VALUE="http://${VALUE}:${MOTION_APACHE_PORT}"
           CAMERAS="${CAMERAS}"',"addon_api":"'${VALUE}'"'
           api=${VALUE}
-        else
+        elif [ -z "${VALUE:-}" ]; then
           CAMERAS="${CAMERAS}"',"addon_api":"'${ADDON_API}'"'
           api=${ADDON_API}
+        else 
+          CAMERAS="${CAMERAS}"',"addon_api":"'${VALUE}'"'
+          api=${VALUE}
         fi
 
         # FTP share_dir
