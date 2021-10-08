@@ -1284,17 +1284,20 @@ for (( i=0; i < ncamera; i++)); do
 
         # addon_api (uses ${url} from above)
         VALUE=$(jq -r '.cameras['${i}'].addon_api' "${CONFIG_PATH}")
-        if [ -z "${VALUE:-}" ] && [ "${CAMERA_TYPE}" != 'ftpd' ]; then
-          VALUE="${url##*//}" && VALUE=${VALUE%%/*} && VALUE=${VALUE%%:*} && VALUE="http://${VALUE}:${MOTION_APACHE_PORT}"
-          CAMERAS="${CAMERAS}"',"addon_api":"'${VALUE}'"'
-          api=${VALUE}
-        elif [ -z "${VALUE:-}" ]; then
-          CAMERAS="${CAMERAS}"',"addon_api":"'${ADDON_API}'"'
-          api=${ADDON_API}
-        else 
-          CAMERAS="${CAMERAS}"',"addon_api":"'${VALUE}'"'
-          api=${VALUE}
+        if [ "${CAMERA_TYPE}" != 'ftpd' ]; then
+          if [ "${VALUE:-null}" = 'null' ]; then
+            api="${url##*//}" && api=${api%%/*} && api=${api%%:*} && api="http://${api}:${MOTION_APACHE_PORT}"
+          else
+            api=${VALUE}
+          fi
+        else
+          if [ "${VALUE:-null}" = 'null' ]; then
+            api=${ADDON_API}
+          else
+            api=${VALUE}
+          fi
         fi
+        CAMERAS="${CAMERAS}"',"addon_api":"'${api}'"'
 
         # FTP share_dir
         if [ "${CAMERA_TYPE}" == 'ftpd' ]; then
