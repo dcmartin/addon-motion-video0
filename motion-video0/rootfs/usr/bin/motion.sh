@@ -1128,9 +1128,13 @@ for (( i=0; i < ncamera; i++)); do
   w3w=""
 
   # words
-  VALUE=$(jq '.cameras['${i}'].words?' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].words' "${CONFIG_PATH}")
   if [ "${VALUE:-null}" != 'null' ]; then
-    V=${VALUE#///*} && a=${V%%.*} && c=${V##*.} && b=${V#*.} && b=${b%%.*}
+    VALUE=${VALUE#///*} 
+    a=${VALUE%%.*}
+    c=${VALUE##*.}
+    b=${VALUE#*.}
+    b=${b%%.*}
     w3w='["'${a}'","'${b}'","'${c}'"]'
     bashio::log.debug "Camera: ${CNAME}: converted ${w3w} from ${VALUE}"
   fi
