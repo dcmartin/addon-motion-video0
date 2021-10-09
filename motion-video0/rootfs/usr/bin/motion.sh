@@ -1124,11 +1124,32 @@ for (( i=0; i < ncamera; i++)); do
   bashio::log.debug "Set icon to ${VALUE}"
   CAMERAS="${CAMERAS}"',"icon":"'"${VALUE}"'"'
 
-  # w3w
+  # What3Words (w3w)
+  w3w=""
+
+  # words
+  VALUE=$(jq '.cameras['${i}'].words?' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" != 'null' ]; then
+    V=${VALUE#///*} && a=${V%%.*} && c=${V##*.} && b=${V#*.} && b=${b%%.*}
+    w3w='["'${a}'","'${b}'","'${c}'"]'
+    bashio::log.debug "Camera: ${CNAME}: converted ${w3w} from ${VALUE}"
+  fi
+
+  # w3w (array)
   VALUE=$(jq '.cameras['${i}'].w3w?' "${CONFIG_PATH}")
-  if [ "${VALUE:-null}" = 'null' ]; then VALUE='["","",""]'; fi
-  CAMERAS="${CAMERAS}"',"w3w":'"${VALUE}"
-  bashio::log.debug "Set w3w to ${VALUE}"
+  if [ -z "${w3w:-}" ] && [ "${VALUE:-null}" = 'null' ]; then
+    bashio::log.info "What3Words not specified; camera: ${CNAME}"
+    w3w='["","",""]'
+  else
+    if [ "${VALUE:-null}" != 'null' ]; then
+      if [ ! -z "${w3w:-}" ]; then
+        bashio::log.info "What3Words: both words and w3w specified; using w3w; camera: ${CNAME}"
+      fi
+      w3w="${VALUE}"
+    fi
+  fi
+  CAMERAS="${CAMERAS}"',"w3w":'"${w3w}"
+  bashio::log.debug "Set w3w to ${w3w}"
 
   # icon top
   VALUE=$(jq -r '.cameras['${i}'].top' "${CONFIG_PATH}")
@@ -1308,7 +1329,7 @@ for (( i=0; i < ncamera; i++)); do
 
         # complete
         CAMERAS="${CAMERAS}"'}'
-        bashio::log.info "CAMERA ${CNAME}: ${CAMERA_TYPE}; URL: ${url}; API: ${api}"
+        bashio::log.info "CAMERA: ${CNAME}: ${CAMERA_TYPE}; URL: ${url}; API: ${api}"
         continue
 	;;
     *)
@@ -1511,11 +1532,12 @@ for (( i=0; i < ncamera; i++)); do
 
       # test netcam_url
       alive=$(curl --anyauth -fsqL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass:-null} ${netcam_url:-null} -o /dev/null 2> /dev/null || true)
+      bashio::log.info "TEST: camera: ${CNAME}; response: ${alive:-null}; URL: ${netcam_url:-null}"
 
       if [ "${alive:-}" != '200' ]; then
-        bashio::log.info "CAMERA ${CNAME}: network; URL: ${netcam_url:-null}; userpass: ${netcam_userpass:-null}; bad response: ${alive:-null}"
+        bashio::log.debug "BAD: ${alive:-null}; camera: ${CNAME}; URL: ${netcam_url:-null}; userpass: ${netcam_userpass:-null}"
       else
-        bashio::log.info "CAMERA ${CNAME}: network; URL: ${netcam_url:-null}; userpass: ${netcam_userpass:-null}; good response: ${alive:-null}"
+        bashio::log.debug "GOOD: ${alive:-null}; camera: ${CNAME}; URL: ${netcam_url:-null}; userpass: ${netcam_userpass:-null}"
       fi
 
       # keepalive
@@ -1551,7 +1573,7 @@ for (( i=0; i < ncamera; i++)); do
     CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
     echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
     bashio::log.debug "Set palette to ${VALUE}"
-    bashio::log.info "CAMERA ${CNAME}: local; device: ${device:-null}; palette: ${VALUE:-null}"
+    bashio::log.info "TEST: camera: ${CNAME}; device: ${device:-null}; palette: ${VALUE:-null}"
   else
     bashio::log.error "Invalid camera type: ${CAMERA_TYPE}"
   fi
