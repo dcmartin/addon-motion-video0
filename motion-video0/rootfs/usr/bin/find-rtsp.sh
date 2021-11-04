@@ -75,6 +75,33 @@ rtsp_test()
   echo ${result:-null}
 }
 
+shelly_test()
+{
+  if [ "${DEBUG:-false}" = 'true' ]; then echo "${FUNCNAME[0]} ${*}" &> /dev/stderr; fi
+
+  local ip="${1:-}"
+  local connect=${2:-${SHELLY_CONNECT_TIME:-5}}
+  local maxtime=${3:-${SHELLY_MAX_TIME:-15}}
+  local result
+  local mt=$(mktemp)
+  local code=$(curl --connect-timeout ${connect} --max-time ${maxtime} -sSL -w '%{http_code}' "http://${ip}/shelly" -o ${mt} 2> /dev/null)
+  local err=$?
+
+  if [ ! -z "${code:-}" ]; then
+    result='{"ip":"'${ip}'","code":"'${code}'"}'
+
+    case ${code} in
+      200)
+        result=$(echo "${result}" | jq '.status='"$(cat ${mt})")
+        ;;
+    esac
+  else
+    result='{"ip":"'${ip}'","status": null}'
+  fi
+  rm -f ${mt}
+  echo ${result:-null}
+}
+
 nmap_scan()
 {
   if [ "${DEBUG:-false}" = 'true' ]; then echo "${FUNCNAME[0]} ${*}" &> /dev/stderr; fi
@@ -112,17 +139,27 @@ find_rtsp()
       local rtsp
 
       for ip in ${ips[@]}; do
-	local dev=$(rtsp_test ${ip} ${connect} ${maxtime})
+	local dev
 
+        # rtsp
+	dev=$(rtsp_test ${ip} ${connect} ${maxtime})
         if [ "${dev:-null}" != 'null' ]; then
 	  if [ $(echo "${dev}" | jq '.status!=null') = 'true' ]; then
 	    if [ "${rtsp:-null}" = 'null' ]; then rtsp='['"${dev}"; else rtsp="${rtsp},${dev}"; fi
           fi
         fi
+        # shelly
+        dev=$(shelly_test ${ip} ${connect} ${maxtime})
+        if [ "${dev:-null}" != 'null' ]; then
+	  if [ $(echo "${dev}" | jq '.status!=null') = 'true' ]; then
+	    if [ "${shelly:-null}" = 'null' ]; then shelly='['"${dev}"; else shelly="${shelly},${dev}"; fi
+          fi
+        fi
       done
       if [ ! -z "${rtsp:-}" ]; then rtsp="${rtsp}]"; else rtsp='null'; fi
+      if [ ! -z "${shelly:-}" ]; then shelly="${shelly}]"; else shelly='null'; fi
     fi
-    result='{"nmap":{"timeout":'${nmap_timeout}',"net":"'${net}'","ipaddr":"'${ipaddr}'"},"connect":'${connect}',"max":'${maxtime}',"devices":'"${rtsp:-null}"'}'
+    result='{"nmap":{"timeout":'${nmap_timeout}',"net":"'${net}'","ipaddr":"'${ipaddr}'"},"connect":'${connect}',"max":'${maxtime}',"shelly":'"${shelly:-null}"',"devices":'"${rtsp:-null}"'}'
   fi
 
   echo "${result:-null}"
