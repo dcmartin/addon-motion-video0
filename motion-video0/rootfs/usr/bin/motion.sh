@@ -57,11 +57,11 @@ function motion::setup.update()
   local e="${2:-}"
   local update
 
-  old=$(jq -r '.'"${e}"'?' /config/setup.json)
+  old="$(jq -r '.'"${e}"'?' /config/setup.json)"
   new=$(bashio::config "${c}")
 
   if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
-    jq -c '.timestamp="'$(date -u '+%FT%TZ')'"|.'"${e}"'="'${new}'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
+    jq -c '.timestamp="'$(date -u '+%FT%TZ')'"|.'"${e}"'="'"${new}"'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
     bashio::log.info "Updated ${e}: ${new}; old: ${old}"
     update=1
   else
