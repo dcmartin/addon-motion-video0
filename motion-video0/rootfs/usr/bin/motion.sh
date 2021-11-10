@@ -58,7 +58,7 @@ function motion::setup.update()
   local update
 
   old="$(jq -r '.'"${e}"'?' /config/setup.json)"
-  new=$(bashio::config "${c}")
+  new=$(jq -r '.'"${c}"'?' "/data/options.json")
 
   if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
     jq -c '.timestamp="'$(date -u '+%FT%TZ')'"|.'"${e}"'="'"${new}"'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
@@ -1535,7 +1535,7 @@ for (( i=0; i < ncamera; i++)); do
       netcam_userpass=${VALUE}
 
       # test netcam_url
-      alive=$(curl --anyauth -fsqL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass:-null} ${netcam_url:-null} -o /dev/null 2> /dev/null || true)
+      alive=$(curl --anyauth -fsqL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u "${netcam_userpass:-null}" "${netcam_url:-null}" -o /dev/null 2> /dev/null || true)
       bashio::log.info "TEST: camera: ${CNAME}; response: ${alive:-null}; URL: ${netcam_url:-null}"
 
       if [ "${alive:-}" != '200' ]; then
