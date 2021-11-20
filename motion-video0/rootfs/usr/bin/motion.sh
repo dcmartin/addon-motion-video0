@@ -533,22 +533,22 @@ JSON="${JSON}"',"format":"'"${VALUE}"'"'
 # local MQTT server (hassio addon)
 VALUE=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="mqtt"; fi
-bashio::log.debug "Using MQTT at ${VALUE}"
+bashio::log.info "Using MQTT at ${VALUE}"
 MQTT='{"host":"'"${VALUE}"'"'
 # username
 VALUE=$(jq -r ".mqtt.username" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-bashio::log.debug "Using MQTT username: ${VALUE}"
+bashio::log.info "Using MQTT username: ${VALUE}"
 MQTT="${MQTT}"',"username":"'"${VALUE}"'"'
 # password
 VALUE=$(jq -r ".mqtt.password" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-bashio::log.debug "Using MQTT password: ${VALUE}"
+bashio::log.info "Using MQTT password: ${VALUE}"
 MQTT="${MQTT}"',"password":"'"${VALUE}"'"'
 # port
 VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
-bashio::log.debug "Using MQTT port: ${VALUE}"
+bashio::log.info "Using MQTT port: ${VALUE}"
 MQTT="${MQTT}"',"port":'"${VALUE}"'}'
 
 ## finish
@@ -1625,6 +1625,12 @@ ftp_notifywait.sh "$(motion.config.file)"
 chmod go+rx /data /data/options.json
 start_apache_background ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
 bashio::log.notice "Started Apache on ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}"
+
+iperf3 -s -D
+bashio::log.notice "Started iperf3"
+
+netdata -d
+bashio::log.notice "Started NetData"
 
 ###
 ## start all motion daemons

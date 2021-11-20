@@ -89,6 +89,17 @@ RUN \
 RUN \
     apk add --no-cache \
         v4l-utils
+RUN \
+    apk add --no-cache \
+        iperf3
+RUN \
+    apk add --no-cache \
+        netdata
+
+RUN \
+  sed -i 's/127.0.0.1/\*/' /etc/netdata/netdata.conf \
+  && \
+  echo 'SEND_EMAIL="NO"' > /etc/netdata/health_alarm_notify.conf
 
 RUN MOTION_VERSION=4.3.1 \
     && curl -J -L -o /tmp/motion.tar.gz \
