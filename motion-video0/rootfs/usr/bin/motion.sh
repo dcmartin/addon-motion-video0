@@ -1629,8 +1629,8 @@ bashio::log.notice "Started Apache on ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT
 iperf3 -s -D
 bashio::log.notice "Started iperf3"
 
-netdata -d
-bashio::log.notice "Started NetData"
+#netdata -d 2>&1 /dev/null &
+#bashio::log.notice "Started NetData"
 
 ###
 ## start all motion daemons
