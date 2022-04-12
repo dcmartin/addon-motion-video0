@@ -1259,38 +1259,50 @@ for (( i=0; i < ncamera; i++)); do
   CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
   TARGET_DIR="${VALUE}"
 
+  # username for mjpeg camera is username iff specified
+  VALUE=$(jq -r '.cameras['${i}'].username' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then
+    # username is same as netcam_userpass iff specified
+    VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
+    if [ "${VALUE:-null}" != 'null' ]; then
+      # username from netcam_userpass
+      VALUE=${VALUE%%:*}
+    fi
+    if [ "${VALUE:-null}" = 'null' ]; then
+      # username is default
+      VALUE=$(echo "${MOTION}" | jq -r '.username')
+    endif
+    USERNAME=${VALUE}
+  fi
+  bashio::log.debug "Set username to ${USERNAME}"
+  CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
+
+  # password for mjpeg camera is password iff specified
+  VALUE=$(jq -r '.cameras['${i}'].password' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then
+    # password is same as netcam_userpass iff specified
+    VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
+    if [ "${VALUE:-null}" != 'null' ]; then
+      # password from netcam_userpass
+      VALUE=${VALUE##*:}
+    fi
+    if [ "${VALUE:-null}" = 'null' ]; then
+      # password is default
+      VALUE=$(echo "${MOTION}" | jq -r '.password')
+    endif
+    PASSWORD=${VALUE}
+  fi
+  bashio::log.debug "Set username to ${PASSWORD}"
+  CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
+
+
   # CAMERA_TYPE
   case "${CAMERA_TYPE}" in
     local|netcam)
-        # username and password for mjpeg camera are motioncam_userpass
-        VALUE=$(jq -r '.cameras['${i}'].motioncam_userpass' "${CONFIG_PATH}")
-        if [ "${VALUE:-null}" = 'null' ]; then
-          USERNAME=$(echo "${MOTION}" | jq -r '.username')
-          PASSWORD=$(echo "${MOTION}" | jq -r '.password')
-        fi
-        bashio::log.debug "Set username to ${USERNAME}"
-        CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
-        bashio::log.debug "Set username to ${PASSWORD}"
-        CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
         bashio::log.debug "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
         CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
 	;;
     ftpd|mqtt)
-        # username and password for mjpeg camera are the same as netcam_userpass
-        VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
-        if [ "${VALUE:-null}" = 'null' ]; then
-          VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass')
-        fi
-        USERNAME=${VALUE%%:*}
-        PASSWORD=${VALUE##*:}
-        bashio::log.debug "Set username to ${USERNAME}"
-        CAMERAS="${CAMERAS}"',"username":"'"${USERNAME}"'"'
-        bashio::log.debug "Set username to ${PASSWORD}"
-        CAMERAS="${CAMERAS}"',"password":"'"${PASSWORD}"'"'
-
-        bashio::log.debug "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
-        CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
-
         # live
         VALUE=$(jq -r '.cameras['${i}'].mjpeg_url' "${CONFIG_PATH}")
         if [ "${VALUE:-null}" = 'null' ]; then
@@ -1306,6 +1318,32 @@ for (( i=0; i < ncamera; i++)); do
         bashio::log.debug "Set mjpeg_url to ${VALUE}"
         CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
         url=${VALUE}
+
+        # netcam
+        VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
+        if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-null}" != 'null' ]; then
+          # network camera
+          CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
+          bashio::log.debug "Set netcam_url to ${VALUE}"
+          netcam_url=${VALUE}
+
+          # userpass
+          VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
+          if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass'); fi
+          CAMERAS="${CAMERAS}"',"netcam_userpass":"'"${VALUE}"'"'
+          bashio::log.debug "Set netcam_userpass to ${VALUE}"
+          netcam_userpass=${VALUE}
+
+          # test netcam_url
+          alive=$(curl --anyauth -fsqL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u "${netcam_userpass:-null}" "${netcam_url:-null}" -o /dev/null 2> /dev/null || true)
+          bashio::log.info "TEST: camera: ${CNAME}; response: ${alive:-null}; URL: ${netcam_url:-null}"
+
+          if [ "${alive:-}" != '200' ]; then
+            bashio::log.debug "BAD: ${alive:-null}; camera: ${CNAME}; URL: ${netcam_url:-null}; userpass: ${netcam_userpass:-null}"
+          else
+            bashio::log.debug "GOOD: ${alive:-null}; camera: ${CNAME}; URL: ${netcam_url:-null}; userpass: ${netcam_userpass:-null}"
+          fi
+        fi
 
         # addon_api (uses ${url} from above)
         VALUE=$(jq -r '.cameras['${i}'].addon_api' "${CONFIG_PATH}")
@@ -1331,15 +1369,18 @@ for (( i=0; i < ncamera; i++)); do
           CAMERAS="${CAMERAS}"',"share_dir":"'"${VALUE}"'"'
         fi
 
+        bashio::log.debug "Camera: ${CNAME}; number: ${CNUM}; type: ${CAMERA_TYPE}"
+        CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
+
         # complete
         CAMERAS="${CAMERAS}"'}'
-        bashio::log.info "CAMERA: ${CNAME}: ${CAMERA_TYPE}; URL: ${url}; API: ${api}"
         continue
 	;;
     *)
         bashio::log.error "CAMERA: ${CNAME}; number: ${CNUM}; invalid camera type: ${CAMERA_TYPE}; setting to unknown; skipping"
         CAMERA_TYPE="unknown"
         CAMERAS="${CAMERAS}"',"type":"'"${CAMERA_TYPE}"'"'
+
         # complete
         CAMERAS="${CAMERAS}"'}'
         continue
@@ -1629,8 +1670,15 @@ bashio::log.notice "Started Apache on ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT
 iperf3 -s -D
 bashio::log.notice "Started iperf3"
 
-#netdata -d 2>&1 /dev/null &
-#bashio::log.notice "Started NetData"
+echo 'Modifying NetData to enable access from any host' \
+  && sed -i 's/127.0.0.1/\*/' /etc/netdata/netdata.conf \
+  && sed -i 's/localhost/\*/' /etc/netdata/netdata.conf \
+  && echo 'SEND_EMAIL="NO"' > /etc/netdata/health_alarm_notify.conf \
+  || echo 'Failed to modify netdata.conf' &> /dev/stderr
+
+echo 'Restarting netdata' \
+  && netdata -d &> /dev/null \
+  || echo 'Failed to restart netdata' &> /dev/stderr
 
 ###
 ## start all motion daemons
