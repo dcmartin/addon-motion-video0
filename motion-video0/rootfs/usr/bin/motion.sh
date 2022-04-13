@@ -1271,7 +1271,7 @@ for (( i=0; i < ncamera; i++)); do
     if [ "${VALUE:-null}" = 'null' ]; then
       # username is default
       VALUE=$(echo "${MOTION}" | jq -r '.username')
-    endif
+    fi
     USERNAME=${VALUE}
   fi
   bashio::log.debug "Set username to ${USERNAME}"
@@ -1289,7 +1289,7 @@ for (( i=0; i < ncamera; i++)); do
     if [ "${VALUE:-null}" = 'null' ]; then
       # password is default
       VALUE=$(echo "${MOTION}" | jq -r '.password')
-    endif
+    fi 
     PASSWORD=${VALUE}
   fi
   bashio::log.debug "Set username to ${PASSWORD}"
@@ -1336,7 +1336,8 @@ for (( i=0; i < ncamera; i++)); do
 
           # test netcam_url
           alive=$(curl --anyauth -fsqL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u "${netcam_userpass:-null}" "${netcam_url:-null}" -o /dev/null 2> /dev/null || true)
-          bashio::log.info "TEST: camera: ${CNAME}; response: ${alive:-null}; URL: ${netcam_url:-null}"
+          bashio::log.info "TEST: camera: ${CNAME}; type: ${CAMERA_TYPE}; response: ${alive:-null}; URL: ${netcam_url:-null}"
+          CAMERAS="${CAMERAS}"',"response":"'"${alive}"'"'
 
           if [ "${alive:-}" != '200' ]; then
             bashio::log.debug "BAD: ${alive:-null}; camera: ${CNAME}; URL: ${netcam_url:-null}; userpass: ${netcam_userpass:-null}"
@@ -1577,7 +1578,8 @@ for (( i=0; i < ncamera; i++)); do
 
       # test netcam_url
       alive=$(curl --anyauth -fsqL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u "${netcam_userpass:-null}" "${netcam_url:-null}" -o /dev/null 2> /dev/null || true)
-      bashio::log.info "TEST: camera: ${CNAME}; response: ${alive:-null}; URL: ${netcam_url:-null}"
+      bashio::log.info "TEST: camera: ${CNAME}; type: ${CAMERA_TYPE}; response: ${alive:-null}; URL: ${netcam_url:-null}"
+      CAMERAS="${CAMERAS}"',"response":"'"${alive}"'"'
 
       if [ "${alive:-}" != '200' ]; then
         bashio::log.debug "BAD: ${alive:-null}; camera: ${CNAME}; URL: ${netcam_url:-null}; userpass: ${netcam_userpass:-null}"
