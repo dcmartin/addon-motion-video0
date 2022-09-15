@@ -48,11 +48,10 @@ RUN \
         linux-headers
 RUN \
     apk add --no-cache \
-        python2-dev
+        v4l-utils-dev
 RUN \
     apk add --no-cache \
-        v4l-utils-dev
-
+        rsync
 RUN \
     apk add --no-cache \
         cifs-utils
@@ -85,9 +84,6 @@ RUN \
         mosquitto-clients
 RUN \
     apk add --no-cache \
-        python2
-RUN \
-    apk add --no-cache \
         v4l-utils
 RUN \
     apk add --no-cache \
@@ -101,7 +97,7 @@ RUN \
   && \
   echo 'SEND_EMAIL="NO"' > /etc/netdata/health_alarm_notify.conf
 
-RUN MOTION_VERSION=4.3.1 \
+RUN MOTION_VERSION=4.4.0 \
     && curl -J -L -o /tmp/motion.tar.gz \
         https://github.com/Motion-Project/motion/archive/release-${MOTION_VERSION}.tar.gz \
     && mkdir -p /tmp/motion \

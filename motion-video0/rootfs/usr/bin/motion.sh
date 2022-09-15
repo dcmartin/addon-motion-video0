@@ -48,8 +48,7 @@ fi
 ## FUNCTIONS
 ###
 
-## updateSetup
-function motion::setup.update()
+function addon::setup.update()
 {
   bashio::log.trace "${FUNCNAME[0]} ${*}"
 
@@ -57,13 +56,14 @@ function motion::setup.update()
   local e="${2:-}"
   local update
 
-  old="$(jq -r '.'"${e}"'?' /config/setup.json)"
-  new=$(jq -r '.'"${c}"'?' "/data/options.json")
+  new=$(jq -r '.'"${c}"'?' "$(motion.config.file)")
+  old=$(jq -r '.'"${e}"'?' /config/setup.json)
 
   if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
-    jq -c '.timestamp="'$(date -u '+%FT%TZ')'"|.'"${e}"'="'"${new}"'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json
-    bashio::log.info "Updated ${e}: ${new}; old: ${old}"
-    update=1
+    jq -Sc '.timestamp="'$(date -u '+%FT%TZ')'"|.'"${e}"'="'"${new}"'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json && bashio::log.debug "Updated ${e}: ${new}; old: ${old}" && update=1 || bashio::log.debug "Could not update ${e} to ${new}"
+  elif [ "${new:-null}" == 'null' ]; then
+    new='none'
+    jq -Sc '.timestamp="'$(date -u '+%FT%TZ')'"|.'"${e}"'="'"${new}"'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json && bashio::log.debug "Initialized ${e}: ${new}" && update=1 || bashio::log.debug "Could not initialize ${e} to ${new}"
   else
     bashio::log.debug "${FUNCNAME[0]} no change ${e}: ${old}; new: ${new}"
   fi
@@ -139,8 +139,16 @@ function motion::reload()
           # yolo
           tf=$(motion::setup.update 'yolo.config' 'MOTION_YOLO_CONFIG') && update=$((update+tf))
           tf=$(motion::setup.update 'yolo.ip' 'MOTION_YOLO_IP') && update=$((update+tf))
-          # USER
-          tf=$(motion::setup.update 'person.user' 'MOTION_USER') && update=$((update+tf))
+          # USERS
+          tf=$(addon::setup.update 'roles.person' 'MOTION_USER') && update=$((update+tf))
+          tf=$(addon::setup.update 'roles.primary' 'MOTION_PRIMARY') && update=$((update+tf))
+          tf=$(addon::setup.update 'roles.secondary' 'MOTION_SECONDARY') && update=$((update+tf))
+          tf=$(addon::setup.update 'roles.tertiary' 'MOTION_TERTIARY') && update=$((update+tf))
+          # DEVICES
+          tf=$(addon::setup.update 'devices.person' 'MOTION_USER_DEVICE') && update=$((update+tf))
+          tf=$(addon::setup.update 'devices.primary' 'MOTION_PRIMARY_DEVICE') && update=$((update+tf))
+          tf=$(addon::setup.update 'devices.secondary' 'MOTION_SECONDARY_DEVICE') && update=$((update+tf))
+          tf=$(addon::setup.update 'devices.tertiary' 'MOTION_TERTIARY_DEVICE') && update=$((update+tf))
           # detected.person
           tf=$(motion::setup.update 'person.entity' 'MOTION_DETECTED_PERSON_ENTITY') && update=$((update+tf))
           tf=$(motion::setup.update 'person.ago' 'MOTION_DETECTED_PERSON_AGO') && update=$((update+tf))
