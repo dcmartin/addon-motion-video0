@@ -29,7 +29,8 @@ motion.status()
   local host=${1:-localhost}
   local port=${2:-8080}
   local options="$(${0%/*}/options.sh 2> /dev/null)"
-  local valid=$(jq -Sc '.?' "/etc/motion/valid.json" 2> /dev/null)
+  local date=$(jq -r '.date?' "/etc/motion/valid.json" 2> /dev/null)
+  local valid=$(jq -r '.valid?' "/etc/motion/valid.json" 2> /dev/null)
 
   if [ "${options:-null}" != 'null' ]; then
     local nnetcam=$(echo "${options}" | jq '[.cameras[]|select(.type=="netcam")]|length')
@@ -37,7 +38,7 @@ motion.status()
     local ndaemon=$(echo "$((nnetcam + nlocal)) / 3" | bc)
     local i=0
 
-    echo -n '{"valid":'${valid:-null}',"host":"'${host}'","daemons":['
+    echo -n '{"date":'${date:-null}',"valid":'${valid:-null}',"host":"'${host}'","daemons":['
     while [ ${i:-0} -le ${ndaemon:-0} ]; do
       if [ ${i} -gt 0 ]; then echo ','; fi
       echo '{"port":'${port}',"cameras":['
