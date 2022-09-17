@@ -1720,7 +1720,7 @@ while true; do
 
     ## validate configuration
     valid=$(curl -sSL -X POST -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" -H "Content-Type: application/json" "http://supervisor/core/api/config/core/check_config")
-    bashio::log.debug "Configuration validation results: ${valid}"
+    bashio::log.info "Configuration validation results: ${valid}"
     echo '{"date":'$(date -u +%s)',"valid":'"${valid:-null}"'}' > /etc/motion/valid.json
 
     ## publish configuration
