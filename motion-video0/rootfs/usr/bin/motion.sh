@@ -61,9 +61,6 @@ function addon::setup.update()
 
   if [ "${new:-null}" != 'null' ] &&  [ "${old:-}" != "${new:-}" ]; then
     jq -Sc '.timestamp="'$(date -u '+%FT%TZ')'"|.'"${e}"'="'"${new}"'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json && bashio::log.debug "Updated ${e}: ${new}; old: ${old}" && update=1 || bashio::log.debug "Could not update ${e} to ${new}"
-  elif [ "${new:-null}" == 'null' ]; then
-    new='none'
-    jq -Sc '.timestamp="'$(date -u '+%FT%TZ')'"|.'"${e}"'="'"${new}"'"' /config/setup.json > /tmp/setup.json.$$ && mv -f /tmp/setup.json.$$ /config/setup.json && bashio::log.debug "Initialized ${e}: ${new}" && update=1 || bashio::log.debug "Could not initialize ${e} to ${new}"
   else
     bashio::log.debug "${FUNCNAME[0]} no change ${e}: ${old}; new: ${new}"
   fi
