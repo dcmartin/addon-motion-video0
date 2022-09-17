@@ -1718,6 +1718,11 @@ motion::reload
 ## forever
 while true; do
 
+    ## validate configuration
+    valid=$(curl -sSL -X POST -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" -H "Content-Type: application/json" "http://supervisor/core/api/config/core/check_config")
+    bashio::log.debug "Configuration validation results: ${valid}"
+    echo '{"date":'$(date -u +%s)',"valid":'"${valid:-null}"'}' > /etc/motion/valid.json
+
     ## publish configuration
     ( motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)" \
       && bashio::log.info "Published configuration to MQTT; topic: $(motion.config.group)/$(motion.config.device)/start" ) \
