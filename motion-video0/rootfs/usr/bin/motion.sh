@@ -67,7 +67,340 @@ function addon::setup.update()
   echo ${update:-0}
 }
 
+function addon::setup.reload()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  if [ "$(bashio::config 'reload')" != 'false' ] && [ -e /config/setup.json ]; then
+    local update=0
+    local i=2
+    local old
+    local new
+    local tf
+
+    while true; do
+      bashio::log.debug "Option 'reload' is true; querying for ${i} seconds at ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}"
+      local config=$(curl -sSL -m ${i} ${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}/cgi-bin/config 2> /dev/null || true)
+
+      config=$(echo "${config}" | jq '.config?')
+      if [ "${config:-null}" != 'null' ]; then
+
+        # check configuration (timezone, latitude, longitude, mqtt, group, device, client)
+        if [ -e /config/setup.json ]; then
+          # site
+          tf=$(addon::setup.update 'site' 'MOTION_SITE') && update=$((update+tf))
+          # w3w
+          tf=$(addon::setup.update 'w3w.apikey' 'MOTION_W3W_APIKEY') && update=$((update+tf))
+          tf=$(addon::setup.update 'w3w.words' 'MOTION_W3W_WORDS') && update=$((update+tf))
+          # uptimerobot
+          tf=$(addon::setup.update 'uptimerobot_rssurl' 'UPTIMEROBOT_RSSURL') && update=$((update+tf))
+          # iperf
+          tf=$(addon::setup.update 'iperf_host' 'IPERF_HOST') && update=$((update+tf))
+          # router
+          tf=$(addon::setup.update 'router_name' 'MOTION_ROUTER_NAME') && update=$((update+tf))
+          # host
+          tf=$(addon::setup.update 'interface' 'HOST_INTERFACE') && update=$((update+tf))
+          tf=$(addon::setup.update 'ipaddr' 'HOST_IPADDR') && update=$((update+tf))
+          tf=$(addon::setup.update 'timezone' 'HOST_TIMEZONE') && update=$((update+tf))
+          tf=$(addon::setup.update 'latitude' 'HOST_LATITUDE') && update=$((update+tf))
+          tf=$(addon::setup.update 'longitude' 'HOST_LONGITUDE') && update=$((update+tf))
+          # mqtt
+          tf=$(addon::setup.update 'mqtt.host' 'MQTT_HOST') && update=$((update+tf))
+          tf=$(addon::setup.update 'mqtt.password' 'MQTT_PASSWORD') && update=$((update+tf))
+          tf=$(addon::setup.update 'mqtt.port' 'MQTT_PORT') && update=$((update+tf))
+          tf=$(addon::setup.update 'mqtt.username' 'MQTT_USERNAME') && update=$((update+tf))
+          # motion
+          tf=$(addon::setup.update 'group' 'MOTION_GROUP') && update=$((update+tf))
+          tf=$(addon::setup.update 'device' 'MOTION_DEVICE') && update=$((update+tf))
+          tf=$(addon::setup.update 'client' 'MOTION_CLIENT') && update=$((update+tf))
+          # overview
+          tf=$(addon::setup.update 'overview.apikey' 'MOTION_OVERVIEW_APIKEY') && update=$((update+tf))
+          tf=$(addon::setup.update 'overview.image' 'MOTION_OVERVIEW_IMAGE') && update=$((update+tf))
+          tf=$(addon::setup.update 'overview.mode' 'MOTION_OVERVIEW_MODE') && update=$((update+tf))
+          tf=$(addon::setup.update 'overview.zoom' 'MOTION_OVERVIEW_ZOOM') && update=$((update+tf))
+          # USERS
+          tf=$(addon::setup.update 'roles.person' 'MOTION_USER') && update=$((update+tf))
+          tf=$(addon::setup.update 'roles.primary' 'MOTION_PRIMARY') && update=$((update+tf))
+          tf=$(addon::setup.update 'roles.secondary' 'MOTION_SECONDARY') && update=$((update+tf))
+          tf=$(addon::setup.update 'roles.tertiary' 'MOTION_TERTIARY') && update=$((update+tf))
+          # DEVICES
+          tf=$(addon::setup.update 'devices.person' 'MOTION_USER_DEVICE') && update=$((update+tf))
+          tf=$(addon::setup.update 'devices.primary' 'MOTION_PRIMARY_DEVICE') && update=$((update+tf))
+          tf=$(addon::setup.update 'devices.secondary' 'MOTION_SECONDARY_DEVICE') && update=$((update+tf))
+          tf=$(addon::setup.update 'devices.tertiary' 'MOTION_TERTIARY_DEVICE') && update=$((update+tf))
+        fi
+
+        # test if update
+        if [ ${update:-0} -gt 0 ]; then
+          bashio::log.debug "Updated settings"
+        else
+          bashio::log.debug "No updates"
+        fi
+        break
+      fi
+
+      # no config; try again
+      sleep ${i}
+      i=$((i+i))
+      if [ ${i:-0} -gt 30 ]; then
+        # up to a limit
+        bashio::log.error "Automatic reload failed waiting on Apache; use Terminal and run 'make restart'"
+        break
+      fi
+    done
+  elif [ ! -e /config/setup.json ]; then
+    bashio::log.debug "Did not find /config/setup.json"
+  else
+    bashio::log.debug "Reload off"
+  fi
+}
+
+## roles
+
+function addon::config.roles()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local person=$(addon::config.option roles.person "none")
+  local primary=$(addon::config.option roles.primary "none")
+  local secondary=$(addon::config.option roles.secondary "none")
+  local tertiary=$(addon::config.option roles.tertiary "none")
+
+  echo '{"person":"'${person:-}'","primary":"'${primary:-}'","secondary":"'${secondary:-}'","tertiary":"'${tertiary:-}'"}'
+}
+
+## devices
+
+function addon::config.devices()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local person=$(addon::config.option devices.person "none")
+  local primary=$(addon::config.option devices.primary "none")
+  local secondary=$(addon::config.option devices.secondary "none")
+  local tertiary=$(addon::config.option devices.tertiary "none")
+
+  echo '{"person":"'${person:-}'","primary":"'${primary:-}'","secondary":"'${secondary:-}'","tertiary":"'${tertiary:-}'"}'
+}
+
+## repo
+
+function addon::config.repo()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local mai_url=$(addon::config.option motionai.url "https://github.com/motion-ai/motion-ai")
+  local mai_tag=$(addon::config.option motionai.tag "dev")
+  local mai_branch=$(addon::config.option motionai.branch "master")
+  local mai_release=$(addon::config.option motionai.release "none")
+
+  echo '{"motionai":{"url":"'${mai_url:-}'","release":"'${mai_release:-}'","branch":"'${mai_branch:-}'","tag":"'${mai_tag:-}'"}}'
+}
+
+## location
+
+function addon::config.location()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local elevation=$(addon::config.option elevation 0)
+  local words=$(addon::config.option w3w.words "///what.three.words")
+  local key=$(addon::config.option w3w.apikey "")
+  local latitude=$(addon::config.option latitude 0)
+  local longitude=$(addon::config.option longitude 0)
+  local results
+
+  if [ "${words:-null}" != 'null' ] && [ "${key:-null}" != 'null' ]; then
+    results=$(curl -ksSL "https://api.what3words.com/v3/convert-to-coordinates?words=${words}&key=${key}" 2> /dev/null)
+    if [ "${results:-null}" != 'null' ] && [ $(echo "${results}" | jq '.error!=null') != 'true' ]; then
+      local lat=$(echo "${results}" | jq -r '.coordinates.lat')
+      local lng=$(echo "${results}" | jq -r '.coordinates.lng')
+
+      if [ "${lat:-null}" != 'null' ] && [ "${lng:-null}" != 'null' ]; then
+        bashio::log.debug "Updating location with latitude=${lat}; longitude=${lng}"
+        latitude=${lat}
+        longitude=${lng}
+      else
+        bashio::log.error "No coordinates in W3W results: ${results:-null}"
+      fi
+    else
+      bashio::log.debug "No W3W results: ${results:-null}"
+    fi
+  else
+    bashio::log.debug "No W3W words or apikey: ${w3w:-null}"
+  fi
+  latitude=$(addon::config.option latitude ${latitude})
+  longitude=$(addon::config.option longitude ${longitude})
+
+  echo '{"latitude":'${latitude:-null}',"longitude":'${longitude:-null}',"elevation":'${elevation:-null}',"apikey":"'${key:-}'","words":"'${words}'","results":'${results:-null}'}'
+}
+
+## mqtt
+
+function addon::config.mqtt()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local network="${1:-}"
+  local ip=$(echo "${network:-null}" | jq -r '.ip?')
+  local host
+  local port=1883
+  local username
+  local password
+
+
+  if [ $(bashio::services.available "mqtt") ]; then
+    host=$(bashio::service 'mqtt' 'host')
+    port=$(bashio::service 'mqtt' 'port')
+    username=$(bashio::service 'mqtt' 'username')
+    password=$(bashio::service 'mqtt' 'password')
+  else
+    bashio::log.debug "${FUNCNAME[0]}: MQTT service unavailable through supervisor; using configuration."
+  fi
+
+  if [ -z "${host:-}" ]; then
+    host=$(bashio::config "mqtt.host")
+    if [ "${host:-null}" = 'null' ]; then
+      host="${ip:-127.0.0.1}"
+      bashio::log.debug "${FUNCNAME[0]}: MQTT host configuration undefined; using host IP address: ${host:-}"
+    fi
+
+    # set from configuration with defaults
+    host=$(addon::config.option mqtt.host "${host}")
+    port=$(addon::config.option mqtt.port "${port}")
+    username=$(addon::config.option mqtt.username 'username')
+    password=$(addon::config.option mqtt.password 'password')
+  fi
+
+  echo '{"host":"'${host:-}'","port":'${port:-null}',"username":"'${username:-}'","password":"'${password:-}'"}'
+}
+
+## timezone
+
+function addon::config.timezone()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local config=$(curl -sSL -X GET -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" -H "Content-Type: application/json" http://supervisor/core/api/config)
+  local timezone=$(echo "${config:-null}" | jq -r '.time_zone?')
+
+  if [ -z "${timezone:-}" ] || [ "${timezone:-null}" == 'null' ]; then
+    timezone='GMT'
+    bashio::log.debug "${FUNCNAME[0]} ${*} - setting timezone to default: ${timezone}"
+  else
+    bashio::log.debug "${FUNCNAME[0]} ${*} - timezone: ${timezone}"
+  fi
+
+  timezone=$(addon::config.option timezone "${timezone}")
+
+  if [ -s "/usr/share/zoneinfo/${timezone}" ]; then
+    cp /usr/share/zoneinfo/${timezone} /etc/localtime
+    echo "${timezone}" > /etc/timezone
+  else
+    bashio::log.error "No known timezone: ${timezone}"
+  fi
+  echo "${timezone:-}"
+}
+
+## network
+
+function addon::config.network()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+  local ipaddr=$(ip addr \
+                 | egrep -A4 UP \
+                 | egrep 'inet ' \
+                 | egrep -v 'scope host lo' \
+                 | egrep -v 'scope global docker' \
+                 | awk '{ print $2 }')
+
+  jq -Sc '.ipaddr="'${ipaddr%%/*}'"' $(motion.config.file) > /tmp/$$.json \
+    && mv -f /tmp/$$.json $(motion.config.file) \
+    || bashio::log.error "Unable to update $(motion.config.file)"
+
+  export ADDON_API="http://${ipaddr%%/*}:${MOTION_APACHE_PORT}"
+  echo '{"ip":"'${ipaddr%%/*}'"}'
+}
+
+# options
+
+function addon::config.options()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local config=$(curl -sSL -X GET -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" -H "Content-Type: application/json" http://supervisor/core/api/config)
+  local site=$(echo "${config:-null}" | jq -r '.location_name?')
+
+  if [ -z "${site:-}" ] || [ "${site:-null}" == 'null' ]; then
+    site='My House'
+    bashio::log.debug "${FUNCNAME[0]} ${*} - Setting site to default: ${site}"
+  else
+    bashio::log.debug "${FUNCNAME[0]} ${*} - Found site: ${site}"
+  fi
+  site=$(addon::config.option site "${site}")
+
+  local host=$(curl -sSL -X GET -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" -H "Content-Type: application/json" http://supervisor/host/info)
+  local device=$(echo "${host:-null}" | jq -r '.data.hostname?')
+  if [ -z "${device:-}" ] || [ "${device:-null}" == 'null' ]; then
+    device="$(hostname -s)"
+    bashio::log.debug "${FUNCNAME[0]} ${*} - Setting device to default: ${device}"
+  else
+    bashio::log.debug "${FUNCNAME[0]} ${*} - Found device: ${device}"
+  fi
+  device=$(addon::config.option device "${device}")
+
+  local rssurl=$(addon::config.option uptimerobot_rssurl "unknown")
+  local iperf=$(addon::config.option iperf_host "127.0.0.1")
+  local unit_system=$(addon::config.option unit_system "imperial")
+  local group=$(addon::config.option group "motion")
+  local client=$(addon::config.option client "+")
+  local share_dir=$(addon::config.option share_dir "/share/${group:-motion}")
+
+  echo '{"device":"'${device:-}'","iperf":"'${iperf:-}'","rssurl":"'${rssurl:-}'","unit_system":"'${unit_system:-}'","share_dir":"'${share_dir:-}'","site":"'${site:-}'","group":"'${group:-}'","client":"'${client:-}'"}'
+}
+
+
+# init
+
+function addon::config.init()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local info=$(curl -sSL -X GET -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" -H "Content-Type: application/json" http://supervisor/info)
+  local host=$(curl -sSL -X GET -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" -H "Content-Type: application/json" http://supervisor/host/info)
+  local config=$(curl -sSL -X GET -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" -H "Content-Type: application/json" http://supervisor/core/api/config)
+  local services=$(curl -sSL -X GET -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" -H "Content-Type: application/json" http://supervisor/services)
+
+  local json='{"supervisor":{"services":'${services:-null}',"host":'${host:-null}',"config":'${config:-null}',"info":'${info:-null}'},"version":"'"${BUILD_VERSION:-}"'","config_path":"'"${CONFIG_PATH}"'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)'}'
+
+  bashio::log.debug "Initializing: $(motion.config.file)"
+  echo "${json}" | jq -Sc '.' | tee $(motion.config.file) || bashio::log.debug "Failed to initialize: $(motion.config.file)"
+}
+
+## config
+
+function addon::config()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local init=$(addon::config.init)
+  local timezone=$(addon::config.timezone)
+  local roles=$(addon::config.roles)
+  local devices=$(addon::config.devices)
+  local repo=$(addon::config.repo)
+  local overview=$(addon::config.overview)
+  local location=$(addon::config.location)
+  local network=$(addon::config.network)
+  local mqtt=$(addon::config.mqtt "${network:-}")
+  local options=$(addon::config.options)
+
+  echo '{"timezone":"'${timezone:-}'","location":'${location:-null}',"network":'${network:-null}',"overview":'${overview:-null}',"repo":'${repo:-null}',"roles":'${roles:-null}',"devices":'${devices:-null}',"mqtt":'${mqtt:-null}',"options":'${options:-null}',"init":'${init:-null}'}'
+}
+
+### LEGACY
+
 ## reload
+
 function motion::reload()
 {
   bashio::log.trace "${FUNCNAME[0]} ${*}"
@@ -201,7 +534,6 @@ function motion::reload()
     done
   fi
 }
-
 
 ## start the apache server in FOREGROUND (does not exit)
 start_apache_foreground()

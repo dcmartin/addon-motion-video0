@@ -97,7 +97,7 @@ RUN \
   && \
   echo 'SEND_EMAIL="NO"' > /etc/netdata/health_alarm_notify.conf
 
-RUN MOTION_VERSION=4.4.0 \
+RUN MOTION_VERSION=4.5.0 \
     && curl -J -L -o /tmp/motion.tar.gz \
         https://github.com/Motion-Project/motion/archive/release-${MOTION_VERSION}.tar.gz \
     && mkdir -p /tmp/motion \
